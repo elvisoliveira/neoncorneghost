@@ -3,14 +3,21 @@
 
 #include QMK_KEYBOARD_H
 
-enum corne_layers { // las capas en este keymap
+// Layer indexes for this keymap. Each symbolic name maps to a numeric layer
+// index used by QMK. Use these names with layer_on/layer_off and
+// layer_state_is to check or change the active layer.
+enum corne_layers {
     _BASE,
     _LOWER,
     _RAISE,
     _TUNE
 };
 
-enum custom_keycodes { // dando nombre de keycodes por definir
+// Custom keycodes specific to this keymap. We start at SAFE_RANGE so we
+// don't conflict with existing QMK keycodes. These are handled in
+// process_record_user() below to implement custom behaviors (layer toggles,
+// multi-key macros, etc.).
+enum custom_keycodes {
     LOWER = SAFE_RANGE,
     RAISE,
     QUOTE,
@@ -28,16 +35,24 @@ enum td_keycodes {
     ALT
 };
 
-// definiendo el keycode TD_CAPLOCK
-// un pulso: Left Shift
-// dos pulsos: Caps Lock
+// Tap Dance actions. Tap Dance lets a single physical key perform different
+// actions depending on how many times it is tapped in quick succession.
+// The mapping below defines three tap-dance behaviors used in the keymap:
+// - CAPLOCK:  single tap -> Left Shift, double tap -> Caps Lock
+// - SUPER:    single tap -> Application/Menu key, double tap -> activate LOWER layer
+// - ALT:      single tap -> Right Alt, double tap -> Left Alt
 qk_tap_dance_action_t tap_dance_actions[] = {
     [CAPLOCK] = ACTION_TAP_DANCE_DOUBLE(KC_LSFT, KC_CAPS),
     [SUPER] = ACTION_TAP_DANCE_DOUBLE(KC_APPLICATION, LOWER),
     [ALT] = ACTION_TAP_DANCE_DOUBLE(KC_RALT, KC_LALT)
 };
 
-const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = { // Las keycodes en cada capa
+// Keymap definition. Each entry here defines the key layout for a layer.
+// The LAYOUT_split_3x6_3 macro arranges keycodes according to the physical
+// matrix of the Corne/Crkbd board. Read these rows as the physical rows of
+// the keyboard; special keycodes (like LOWER, RAISE, custom keycodes and
+// tap-dance TD(...)) are handled elsewhere in this file.
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3(
         KC_ESCAPE     , KC_Q  , KC_W   , KC_E   , KC_R  , KC_T    , KC_Y , KC_U , KC_I    , KC_O   , KC_P    , KC_BSPC ,
         KC_TAB        , KC_A  , KC_S   , KC_D   , KC_F  , KC_G    , KC_H , KC_J , KC_K    , KC_L   , KC_SCLN , QUOTE   ,
@@ -69,8 +84,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = { // Las keycodes e
 
 // ---------------------- variables -----------------------------
 
-#define ANIM_SIZE_GHOST 128 // size en bytes de cada frame
-#define ANIM_FRAME_DURATION 200 // cuanto tiempo mostrar cada frame
+#define ANIM_SIZE_GHOST 128 // number of bytes per ghost animation frame (stored in PROGMEM)
+#define ANIM_FRAME_DURATION 200 // milliseconds to show each animation frame
 
 led_t led_usb_state;
 
@@ -96,30 +111,44 @@ char wpm_str[4];
 
 // --------------------------------------------------------------
 
+// Runs once right after the keyboard finishes initializing. Use this to
+// read initial hardware state and initialize runtime variables that depend
+// on that state. Here we capture the current RGB hue and set the working
+// brightness limit.
 void keyboard_post_init_user(void) {
     current_hue = rgblight_get_hue();
+    // Use the configured brightness limit so we don't exceed it later.
     current_val = RGBLIGHT_LIMIT_VAL;
 }
 
+// layer_state_set_user is a QMK hook called whenever the layer state
+// changes. The "highest" active layer (the one with highest index that is
+// currently enabled) is used to decide the RGB color. We avoid changing
+// RGB when Caps Lock is on because led_set_user() forces a Caps Lock
+// indicator color separately.
 layer_state_t layer_state_set_user(layer_state_t state) {
 
     switch (get_highest_layer(state)) {
         case _TUNE:
+            // TUNE layer uses a white RGB for clarity.
             if (!host_keyboard_led_state().caps_lock) {
                 rgblight_sethsv(HSV_WHITE);
             }
             break;
         case _RAISE:
+            // RAISE layer uses a bluish tint.
             if (!host_keyboard_led_state().caps_lock) {
                 rgblight_sethsv(245, 255, current_val);
             }
             break;
         case _LOWER:
+            // LOWER layer uses teal.
             if (!host_keyboard_led_state().caps_lock) {
                 rgblight_sethsv(HSV_TEAL);
             }
             break;
         case _BASE:
+            // BASE layer uses the user's selected hue.
             if (!host_keyboard_led_state().caps_lock) {
                 rgblight_sethsv(current_hue, 255, current_val);
             }
@@ -130,17 +159,37 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
 void led_set_user(uint8_t usb_led) {
     if (usb_led & (1<<USB_LED_CAPS_LOCK)) {
-        rgblight_sethsv(22, 255, current_val); // amarillo
+        rgblight_sethsv(22, 255, current_val); // yellow for Caps Lock
     } else { 
         rgblight_sethsv(current_hue, 255, current_val);
     }
 }
 
-#ifdef OLED_ENABLE // si OLED_ENABLE = yes en rules.mk
+#ifdef OLED_ENABLE // only compile OLED code if OLED is enabled in rules.mk
 #include <stdio.h>
-
-static void master_render_ghost(void) { // esta funcion contiene los frames y logica de la animacion del ghost
-    static const char PROGMEM hide[2][ANIM_SIZE_GHOST] = { // frames de hide
+/*
+ * Master OLED rendering and ghost animations
+ * -----------------------------------------
+ * The master_render_ghost() function defines several small bitmap animations
+ * (stored in PROGMEM to save RAM) and contains the logic to select which
+ * animation to draw on the master half's OLED. Animations are stored as
+ * arrays of bytes (bitmaps) and written directly to the OLED with
+ * oled_write_raw_P().
+ *
+ * Selection logic (in animate_ghost):
+ * - If Caps Lock is active: show the "hide" animation
+ * - If LOWER layer is active: show "shyguy" (or "laugh" when TUNE is also active)
+ * - If RAISE layer is active: show "eerie" (or "laugh" when TUNE is also active)
+ * - If Left or Right Shift is held: show "scare"
+ * - If Right Alt is held: show "troll"
+ * - Otherwise: show the default "laugh" animation
+ *
+ * Timing: an anim_ghost_timer controls the frame rate (ANIM_FRAME_DURATION
+ * ms per frame). When the user is typing (non-zero WPM) the animation sleep
+ * timers are reset so the display remains active.
+ */
+static void master_render_ghost(void) {
+    static const char PROGMEM hide[2][ANIM_SIZE_GHOST] = { // frames for "hide" animation
         { // 'hide1' 32x28px
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x40, 0x40, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20, 0x40, 0x40, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -163,7 +212,7 @@ static void master_render_ghost(void) { // esta funcion contiene los frames y lo
         }
     }; 
 
-    static const char PROGMEM shyguy[2][ANIM_SIZE_GHOST] = { // frames de shyguy
+    static const char PROGMEM shyguy[2][ANIM_SIZE_GHOST] = { // frames for "shyguy" animation
         { // 'shyguy1' 32x28px
             0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x40, 0x40, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
             0xa0, 0x60, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x40, 0x40, 0x80, 0x00, 0x00, 0x00,
@@ -186,7 +235,7 @@ static void master_render_ghost(void) { // esta funcion contiene los frames y lo
         }
     };
 
-    static const char PROGMEM eerie[2][ANIM_SIZE_GHOST] = { // frames de eerie
+    static const char PROGMEM eerie[2][ANIM_SIZE_GHOST] = { // frames for "eerie" animation
         { // 'eerie1' 32x28px
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x40, 0x80, 0x00, 0x80, 0x40, 0x20, 0x20, 0x20,
             0x20, 0x40, 0x80, 0x40, 0x20, 0x20, 0x20, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -209,7 +258,7 @@ static void master_render_ghost(void) { // esta funcion contiene los frames y lo
         }
     };
 
-    static const char PROGMEM scare[2][ANIM_SIZE_GHOST] = { // frames de scare
+    static const char PROGMEM scare[2][ANIM_SIZE_GHOST] = { // frames for "scare" animation
         { // 'scare1' 32x28px
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x40, 0x40, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20, 0x40, 0x40, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -232,7 +281,7 @@ static void master_render_ghost(void) { // esta funcion contiene los frames y lo
         }
     };
 
-    static const char PROGMEM troll[2][ANIM_SIZE_GHOST] = { // frames de troll
+    static const char PROGMEM troll[2][ANIM_SIZE_GHOST] = { // frames for "troll" animation
         { // 'troll1' 32x28px
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x40, 0x40, 0x20, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20, 0x40, 0x40, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -255,7 +304,7 @@ static void master_render_ghost(void) { // esta funcion contiene los frames y lo
         }
     };
 
-    static const char PROGMEM laugh[2][ANIM_SIZE_GHOST] = { // frames de laugh
+    static const char PROGMEM laugh[2][ANIM_SIZE_GHOST] = { // frames for "laugh" animation
         { // 'laugh1' 32x28px
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x40, 0x40, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20, 0x40, 0x40, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -279,46 +328,59 @@ static void master_render_ghost(void) { // esta funcion contiene los frames y lo
     };
 
     void animate_ghost(void) {
-        current_ghost_frame = (current_ghost_frame + 1) % 2; // current_ghost_frame se va turnando entre los valores 0 y 1
-        if (led_usb_state.caps_lock) { // si esta activado Caps Lock
-            oled_write_raw_P(hide[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // ghost se esconde
+        current_ghost_frame = (current_ghost_frame + 1) % 2; // alternate between frame 0 and 1
+        if (led_usb_state.caps_lock) { // Caps Lock active -> hiding animation
+            oled_write_raw_P(hide[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // hide
         }
         else if (IS_LAYER_ON(_LOWER)) {
             if (IS_LAYER_OFF(_TUNE)) {
-                oled_write_raw_P(shyguy[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // shyguy
+                // LOWER layer active, normal shyguy animation
+                oled_write_raw_P(shyguy[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
             }
             else {
-                oled_write_raw_P(laugh[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // ghost se rie
+                // LOWER + TUNE -> laughing animation
+                oled_write_raw_P(laugh[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
             }
         }
         else if (IS_LAYER_ON(_RAISE)) {
             if (IS_LAYER_OFF(_TUNE)) {
-                oled_write_raw_P(eerie[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // eerie
+                // RAISE layer active, eerie animation
+                oled_write_raw_P(eerie[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
             }
             else {
-                oled_write_raw_P(laugh[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // ghost se rie 
+                // RAISE + TUNE -> laughing animation
+                oled_write_raw_P(laugh[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
             }
         }
         else if ( (keyboard_report->mods & MOD_BIT (KC_LSFT)) || (keyboard_report->mods & MOD_BIT (KC_RSFT)) ) {
-            oled_write_raw_P(scare[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // ghost asusta
+            // Shift held -> scare animation
+            oled_write_raw_P(scare[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
         }
         else if (keyboard_report->mods & MOD_BIT (KC_RALT)) {
-            oled_write_raw_P(troll[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // ghost trollea
+            // Right Alt held -> troll animation
+            oled_write_raw_P(troll[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
         }
         else {
-            oled_write_raw_P(laugh[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // ghost se rie
+            // Default: laughing animation
+            oled_write_raw_P(laugh[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
         }
     }
-    if (timer_elapsed32(anim_ghost_timer) > ANIM_FRAME_DURATION) { // timer_elapsed32(anim_ghost_timer) tiempo transcurrido en ms desde la ultima vez que se actualizo anim_ghost_timer
-        anim_ghost_timer = timer_read32(); // se actualiza anim_ghost_timer
-        animate_ghost(); // se ejecuta animate_ghost()
-        if (current_wpm != 0) { 
-            anim_ghost_sleep = timer_read32(); // se actualiza anim_ghost_sleep
+    // Update the animation frame at the configured frame duration.
+    if (timer_elapsed32(anim_ghost_timer) > ANIM_FRAME_DURATION) {
+        anim_ghost_timer = timer_read32(); // reset the frame timer
+        animate_ghost(); // draw the next frame
+        if (current_wpm != 0) {
+            // If the user is typing, update the "last active" timestamp
+            anim_ghost_sleep = timer_read32();
         }
     }
 }
 
-static void render_layer(void) { // esta funcion muestra las capas en el OLED y resalta la capa presente
+// Render the textual layer indicator on the OLED. Each line writes the layer
+// name and highlights (inverted text) the currently active layer. The
+// function uses layer_state_is() and layer_state flags to decide which name
+// to highlight. Keep the output compact so it fits on the small OLED.
+static void render_layer(void) {
     oled_write_P(PSTR("RAISE"), layer_state_is(_RAISE) && !layer_state_is(_TUNE));
     oled_write_P(PSTR("BASE\n"), layer_state_is(_BASE));
     oled_write_P(PSTR("LOWER"), layer_state_is(_LOWER) && !layer_state_is(_TUNE));
@@ -330,11 +392,21 @@ static void render_mode(void) {
     mode_str[2] = '0' + mode_value % 10;
     mode_str[1] = '0' + ( mode_value /= 10) % 10;
     mode_str[0] = '0' + mode_value / 10;
+    // Format the RGB mode number as a 3-digit ASCII string and print it.
+    // mode_value comes from rgblight_get_mode(). Note: the code below uses
+    // the "/=" operator which mutates mode_value. That works here because
+    // mode_value is a copy of the global retrieved earlier in oled_task_user(),
+    // but be careful if you refactor this code.
     oled_write("MODE ", false);
     oled_write(" ", false);
-    oled_write(mode_str, false); // printear valor de WPM
+    oled_write(mode_str, false);
 }
 
+// Print current Hue, Saturation and Value (HSV) to the OLED.
+// The function converts numeric HSV values into 3-char ASCII strings for
+// compact display. Note: the implementation uses in-place division (x /= 10)
+// which mutates the source variable; if you need the original values later
+// copy them into a temporary variable first.
 static void render_hsv(void) {
     oled_write("H ", false);
     hue_str[3] = '\0';
@@ -359,7 +431,11 @@ static void render_hsv(void) {
 }
 
 static void slave_render_ghost(void) {
-    static const char PROGMEM fishing[2][416] = { // frames de fishing
+    // The slave (secondary) OLED displays a larger "fishing" animation.
+    // This array contains two 416-byte frames (32x100 pixels represented as
+    // pages) stored in PROGMEM. The animate_fishing() helper toggles
+    // current_ghost_frame and writes the appropriate frame to the slave OLED.
+    static const char PROGMEM fishing[2][416] = { // frames for "fishing" animation
         { // 'fishing1' 32x100px
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x40, 0x20, 0x10,
             0x10, 0x10, 0x10, 0x10, 0x20, 0x20, 0x20, 0x20, 0x50, 0x88, 0x08, 0x10, 0x28, 0x44, 0xa8, 0x10,
@@ -409,15 +485,18 @@ static void slave_render_ghost(void) {
             0x5f, 0x5f, 0x5e, 0x5e, 0x4f, 0x27, 0x11, 0x08, 0x04, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         }
     };  
+    // Toggle and draw the fishing animation on the slave OLED at the
+    // configured frame rate. The sleep timer is updated when the user is
+    // typing to keep the display active.
     void animate_fishing(void) {
-        current_ghost_frame = (current_ghost_frame + 1) % 2; // current_ghost_frame se va turnando entre los valores 0 y 1
-        oled_write_raw_P(fishing[abs(1 - current_ghost_frame)], 416); // fishing
+        current_ghost_frame = (current_ghost_frame + 1) % 2; // alternate frames
+        oled_write_raw_P(fishing[abs(1 - current_ghost_frame)], 416);
     }
-    if (timer_elapsed32(anim_fishing_timer) > ANIM_FRAME_DURATION) { // timer_elapsed32(anim_ghost_timer) tiempo transcurrido en ms desde la ultima vez que se actualizo anim_ghost_timer
-        anim_fishing_timer = timer_read32(); // se actualiza anim_ghost_timer
-        animate_fishing(); // se ejecuta animate_ghost()
+    if (timer_elapsed32(anim_fishing_timer) > ANIM_FRAME_DURATION) {
+        anim_fishing_timer = timer_read32();
+        animate_fishing();
         if (current_wpm != 0) {
-            anim_fishing_sleep = timer_read32(); // se actualiza anim_ghost_sleep
+            anim_fishing_sleep = timer_read32();
         }
     }
 }
@@ -426,10 +505,14 @@ static void slave_render_ghost(void) {
 static void render_wpm(void) {
     oled_write("WPM\n", false);
     sprintf(wpm_str, "%03d", current_wpm);
-    oled_write(wpm_str, false); // printear valor de WPM
+    oled_write(wpm_str, false); // print WPM value
 }
 */
 
+// Initialize the OLED rotation for each half. Returning a rotation here
+// tells the OLED driver how to orient the display. This board uses the
+// same rotation (270 degrees) for both master and slave so the graphics
+// align correctly with the physical mounting.
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     if (is_keyboard_master()) {
         return OLED_ROTATION_270;
@@ -438,15 +521,13 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
         return OLED_ROTATION_270;
     }
     return rotation;
-    // rotacion de 270 en ambas pantallas OLED (master y slave)
-    // de manera que el punto inicial este en un cierto extremo
-    // y se siga cierta orientacion
 }
 
-// el OLED es de 128x32 pixeles
-// cada page es de 8 pixeles a lo largo del lado con 128 px
-// por lo que hay 16 pages a lo largo de los 128 px
-bool oled_task_user(void) { // funcion en la cual se indica que poner en cada OLED
+// OLED characteristics: 128x32 pixels. Internally the driver operates in
+// 8-pixel-high pages (so 128/8 = 16 pages across 128 pixels). This task
+// is called periodically by QMK and is responsible for drawing content on
+// each OLED.
+bool oled_task_user(void) {
     current_wpm = get_current_wpm();
     mode_value = rgblight_get_mode();
     hue_value = rgblight_get_hue();
@@ -463,21 +544,18 @@ bool oled_task_user(void) { // funcion en la cual se indica que poner en cada OL
         oled_on();
     }
     led_usb_state = host_keyboard_led_state();
-    if (is_keyboard_master()) { // OLED del master
+    if (is_keyboard_master()) { // master OLED: ghost animation + status
         oled_set_cursor(0,1);
-        master_render_ghost(); // lo del fantasma
+        master_render_ghost(); // ghost animation
         oled_set_cursor(0,6);
-        render_layer(); // lo de las capas
+        render_layer(); // layer indicators
         oled_set_cursor(0,11);
-        // render_mode();
-        // oled_set_cursor(0,12);
-        render_hsv(); // lo del HSV
+        render_hsv(); // HSV values
     }
-    else {
+    else { // slave OLED: fishing animation + mode
         oled_set_cursor(0,1);
         slave_render_ghost();
         oled_set_cursor(0,13);
-        // render_wpm();
         render_mode();
     }
     return true;
@@ -485,6 +563,16 @@ bool oled_task_user(void) { // funcion en la cual se indica que poner en cada OL
 
 #endif // OLED_ENABLE
 
+// process_record_user handles custom keycodes defined earlier (LOWER,
+// RAISE, QUOTE, CIRC, WAVE, VERTICALBAR, GRAVE, HUI, HUD) and is called on
+// every key event. Return false from a case to indicate that we've handled
+// the key and QMK should not perform default processing for it. Typical
+// uses here are:
+// - Toggle layers (layer_on/layer_off and update_tri_layer for tri-layer)
+// - Emit multiple keycodes (register_code/unregister_code) to produce
+//   small macros (e.g., quote + space)
+// - Adjust runtime variables (e.g., current_hue for RGB
+//   control)
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case HUI:
