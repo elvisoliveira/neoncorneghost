@@ -19,12 +19,8 @@ enum corne_layers {
 // multi-key macros, etc.).
 enum custom_keycodes {
     LOWER = SAFE_RANGE,
+    OLED_TG,
     RAISE,
-    QUOTE,
-    CIRC,
-    WAVE,
-    VERTBAR,
-    GRAVE,
     HUI,
     HUD
 };
@@ -56,16 +52,10 @@ enum td_keycodes {
 #define ANIM_FRAME_DURATION 200 // milliseconds to show each animation frame
 #define OLED_SLEEP_TIMEOUT_MS 120000
 
-led_t led_usb_state;
-
 uint32_t anim_ghost_timer;
-uint32_t anim_ghost_sleep;
 uint32_t anim_fishing_timer;
-uint32_t anim_fishing_sleep;
-uint32_t oled_last_input;
-
-uint8_t current_wpm = 0;
 uint8_t current_ghost_frame = 0;
+
 uint8_t hue_value;
 uint8_t sat_value;
 uint8_t val_value;
@@ -78,17 +68,15 @@ char mode_str[4];
 char wpm_str[4];
 
 static bool rgb_allowed = false;
-
+static bool oled_enabled = true;
 // --------------------------------------------------------------
 
 void keyboard_post_init_user(void) {
-    oled_last_input = timer_read32();
-
     rgblight_disable_noeeprom();
 }
 
 // process_record_user handles custom keycodes defined earlier (LOWER,
-// RAISE, QUOTE, CIRC, WAVE, VERTBAR, GRAVE, HUI, HUD) and is called on
+// RAISE, HUI, HUD) and is called on
 // every key event. Return false from a case to indicate that we've handled
 // the key and QMK should not perform default processing for it. Typical
 // uses here are:
@@ -97,17 +85,12 @@ void keyboard_post_init_user(void) {
 //   small macros (e.g., quote + space)
 // - Adjust runtime variables
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    #ifdef OLED_ENABLE
-    if (record->event.pressed) {
-        oled_last_input = timer_read32();
-        anim_ghost_sleep = oled_last_input;
-        anim_fishing_sleep = oled_last_input;
-        if (!is_oled_on()) {
-            oled_on();
-        }
-    }
-    #endif // OLED_ENABLE
     switch (keycode) {
+        case OLED_TG:
+            if (record->event.pressed) {
+                oled_enabled = !oled_enabled;
+            }
+            return true;
         case UG_TOGG:
             // if RGBLIGHT is enabled, we want to allow it to be turned on by the UG_TOGG keycode
             if (record->event.pressed) {
@@ -148,65 +131,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 update_tri_layer(_LOWER, _RAISE, _TUNE);
             }
             return false;
-        // QUOTE: emit a quote followed by a space
-        case QUOTE:
-            if (record->event.pressed) {
-                register_code(KC_QUOTE);
-                register_code(KC_SPACE);
-            }
-            else { 
-                unregister_code(KC_QUOTE);
-                unregister_code(KC_SPACE);
-            }
-            return false;
-        // CIRC: emit caret (Shift+6) followed by a space
-        case CIRC:
-            if (record->event.pressed) {
-                register_code(KC_LSFT);
-                register_code(KC_6);
-                register_code(KC_SPACE);
-            }
-            else {
-                unregister_code(KC_LSFT);
-                unregister_code(KC_6);
-                unregister_code(KC_SPACE);
-            }
-            return false;
-        // WAVE: emit tilde (Shift+Grave) followed by a space
-        case WAVE:
-            if (record->event.pressed) {
-                register_code(KC_LSFT);
-                register_code(KC_GRAVE);
-                register_code(KC_SPACE);
-            }
-            else {
-                unregister_code(KC_LSFT);
-                unregister_code(KC_GRAVE);
-                unregister_code(KC_SPACE);
-            }
-            return false;
-        // VERTBAR: emit pipe (Shift+Slash)
-        case VERTBAR:
-            if (record->event.pressed) {
-                register_code(KC_LSFT);
-                register_code(KC_SLASH);
-            }
-            else {
-                unregister_code(KC_LSFT);
-                unregister_code(KC_SLASH);
-            }
-            return false; 
-        // GRAVE: emit grave accent followed by a space
-        case GRAVE:
-            if (record->event.pressed) {
-                register_code(KC_GRAVE);
-                register_code(KC_SPACE);
-            }
-            else {
-                unregister_code(KC_GRAVE);
-                unregister_code(KC_SPACE);
-            }
-            return false;
     }
     return true;
 }
@@ -229,35 +153,35 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 // is called periodically by QMK and is responsible for drawing content on
 // each OLED.
 bool oled_task_user(void) {
-    current_wpm = get_current_wpm();
     mode_value = rgblight_get_mode();
     hue_value = rgblight_get_hue();
     sat_value = rgblight_get_sat();
     val_value = rgblight_get_val();
-    if ((timer_elapsed32(anim_ghost_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
-        (timer_elapsed32(anim_fishing_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
-        (timer_elapsed32(oled_last_input) > OLED_SLEEP_TIMEOUT_MS)) {
-        if (is_oled_on()) {
-            oled_off();
-        }
-        timer_init();
+
+    #ifdef OLED_ENABLE
+    if (!oled_enabled) {
+        if (is_oled_on()) oled_off();
         return false;
     }
-    led_usb_state = host_keyboard_led_state();
-    if (is_keyboard_master()) { // master OLED: ghost animation + status
+    #endif // OLED_ENABLE
+
+    // master OLED: ghost animation + status
+    if (is_keyboard_master()) {
         oled_set_cursor(0,1);
-        master_render_ghost(); // ghost animation
+        master_render_ghost();
         oled_set_cursor(0,6);
-        render_layer(); // layer indicators
+        render_layer();
         oled_set_cursor(0,11);
-        render_hsv(); // HSV values
+        render_hsv();
     }
-    else { // slave OLED: fishing animation + mode
+    // slave OLED: fishing animation + mode
+    else {
         oled_set_cursor(0,1);
         slave_render_ghost();
         oled_set_cursor(0,13);
         render_mode();
     }
+
     return false;
 }
 #endif // OLED_ENABLE

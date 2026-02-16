@@ -67,7 +67,7 @@ def is_keycode_line(line):
     if re.search(r'\[_\w+\]\s*=\s*LAYOUT', line):
         return False
 
-    return bool(re.search(r'KC_|RAISE|LOWER|SUPER|QUOTE|TD\(|LT\(|MT\(|XXXXXXX|_______', line)) and \
+    return bool(re.search(r'KC_|RAISE|LOWER|SUPER|TD\(|LT\(|MT\(|XXXXXXX|_______', line)) and \
            not line.strip().startswith('//')
 
 

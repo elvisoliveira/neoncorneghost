@@ -30,10 +30,9 @@ static void master_render_ghost(void) {
 
     void animate_ghost(void) {
         current_ghost_frame = (current_ghost_frame + 1) % 2; // alternate between frame 0 and 1
-        if (led_usb_state.caps_lock) { // Caps Lock active -> hiding animation
-            oled_write_raw_P(hide[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // hide
-        }
-        else if (IS_LAYER_ON(_LOWER)) {
+        // hide animation
+        // oled_write_raw_P(hide[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST); // hide
+        if (IS_LAYER_ON(_LOWER)) {
             if (IS_LAYER_OFF(_TUNE)) {
                 // LOWER layer active, normal shyguy animation
                 oled_write_raw_P(shyguy[abs(1 - current_ghost_frame)], ANIM_SIZE_GHOST);
@@ -70,10 +69,6 @@ static void master_render_ghost(void) {
     if (timer_elapsed32(anim_ghost_timer) > ANIM_FRAME_DURATION) {
         anim_ghost_timer = timer_read32(); // reset the frame timer
         animate_ghost(); // draw the next frame
-        if (current_wpm != 0) {
-            // If the user is typing, update the "last active" timestamp
-            anim_ghost_sleep = timer_read32();
-        }
     }
 }
 
@@ -97,8 +92,5 @@ static void slave_render_ghost(void) {
     if (timer_elapsed32(anim_fishing_timer) > ANIM_FRAME_DURATION) {
         anim_fishing_timer = timer_read32();
         animate_fishing();
-        if (current_wpm != 0) {
-            anim_fishing_sleep = timer_read32();
-        }
     }
 }
