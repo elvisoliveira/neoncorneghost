@@ -41,14 +41,14 @@ qmk flash -kb crkbd/rev1/common -km neoncorneghost -bl avrdude-split-right
 ```
 
 Editing the keymap
-- The layer definitions are moved into `keymap_layers.h` to make layout edits easier. Edit that file to change layer contents.
-- `keymap.c` contains the runtime logic (layers, OLED rendering, RGB handling). Keep big bitmap assets in the animation headers described below.
+- The layer definitions are moved into `layers.h` to make layout edits easier. Edit that file to change layer contents.
+- `keymap.c` contains runtime logic and delegates OLED/RGB behavior to `oled.c` and `rgb.c`. Keep big bitmap assets in the animation headers described below.
 
 OLED animations and assets
-- Large PROGMEM bitmaps are stored in the headers:
-	- `oled_ghost_anims.h` — ghost animation frames used by the master OLED
-	- `oled_fishing_anims.h` — fishing animation frames used by the slave OLED
-- Edit these files if you want to change or add animations. They are included inside the OLED-rendering functions so they remain function-local.
+- Large PROGMEM bitmaps are stored in:
+	- `oled_anims_master.h` — animation frames used by the master OLED
+	- `oled_anims_slave.h` — animation frames used by the slave OLED
+- Edit these files if you want to change or add animations. They are included inside the OLED-rendering functions so arrays remain function-local.
 
 Troubleshooting
 - If the build fails with missing headers, ensure the files above are present in the same directory as `keymap.c`.

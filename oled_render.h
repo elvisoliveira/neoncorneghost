@@ -18,22 +18,22 @@ static void render_layer(void) {
 
 static void render_mode(void) {
     // Format the RGB mode number as a 3-digit ASCII string and print it.
-    format_3digits(mode_value, mode_str);
+    format_3digits(rgb_mode, mode_buf);
     oled_write("MODE  ", false);
-    oled_write(mode_str, false);
+    oled_write(mode_buf, false);
 }
 
 // Print current Hue, Saturation and Value (HSV) to the OLED.
 static void render_hsv(void) {
     oled_write("H ", false);
-    format_3digits(hue_value, hue_str);
-    oled_write(hue_str, false);
+    format_3digits(hue, hue_buf);
+    oled_write(hue_buf, false);
 
     oled_write("S ", false);
-    format_3digits(sat_value, sat_str);
-    oled_write(sat_str, false);
+    format_3digits(sat, sat_buf);
+    oled_write(sat_buf, false);
 
     oled_write("V ", false);
-    format_3digits(val_value, val_str);
-    oled_write(val_str, false);
+    format_3digits(val, val_buf);
+    oled_write(val_buf, false);
 }

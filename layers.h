@@ -4,6 +4,9 @@
 // to read and edit.
 #pragma once
 
+// Layer names used by the keymaps below.
+#include "layer_names.h"
+
 // Named aliases for right-alt (AltGr) combos used in the keymap.
 // Using macros makes it easier to change the combos in one place.
 #define RALT_1    RALT(KC_1)
@@ -19,7 +22,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           KC_LCTL,      KC_Z,      KC_X,      KC_C,      KC_V,      KC_B,                               KC_N,      KC_M,   KC_COMM,    KC_DOT,   KC_SLSH,    KC_ESC,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
-                                                     META,     LOWER,    KC_SPC,       KC_ENT,     RAISE,   TD(ALT)
+                                                     META,  KC_LOWER,    KC_SPC,       KC_ENT,  KC_RAISE,   TD(ALT)
     //                                            |----------+----------+----------|  |----------+----------+----------|
     ),
 
@@ -31,7 +34,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           KC_LCTL,     KC_F1,     KC_F2,     KC_F3,     KC_F4,     KC_F5,                              KC_F6,     KC_F7,     KC_F8,     KC_F9,    KC_F10,    KC_F11,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
-                                                       KC_DEL,   _______,    KC_SPC,       KC_ENT,     RAISE,   TD(ALT)
+                                                       KC_DEL,   _______,    KC_SPC,       KC_ENT,  KC_RAISE,   TD(ALT)
     //                                            |----------+----------+----------|  |----------+----------+----------|
     ),
 
@@ -49,7 +52,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_TUNE] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          UG_TOGG,   RGB_M_P,   RGB_M_B,   RGB_M_R,  RGB_M_SW,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   OLED_TG,
+          UG_TOGG,   RGB_M_P,   RGB_M_B,   RGB_M_R,  RGB_M_SW,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX, KC_OLED_TG,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           RGB_M_G,       HUI,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|

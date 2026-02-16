@@ -68,7 +68,7 @@ def is_keycode_line(line):
         return False
 
     return bool(
-        re.search(r"KC_|RAISE|LOWER|SUPER|QUOTE|TD\(|LT\(|MT\(|XXXXXXX|_______", line)
+        re.search(r"KC_|KC_RAISE|KC_LOWER|SUPER|QUOTE|TD\(|LT\(|MT\(|XXXXXXX|_______", line)
     ) and not line.strip().startswith("//")
 
 
