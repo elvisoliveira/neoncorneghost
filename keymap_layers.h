@@ -14,7 +14,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_LOWER] = LAYOUT_split_3x6_3(
         KC_TAB  , KC_1    , KC_2    , KC_3       , KC_4    , KC_5    , KC_6    , KC_7    , KC_8    , KC_9  , KC_0     , KC_BSPC ,
-        KC_LSFT , KC_PGDN , KC_PGUP , KC_PSCREEN , KC_LGUI , XXXXXXX , KC_HOME , KC_LEFT , KC_DOWN , KC_UP , KC_RIGHT , KC_END  ,
+        KC_LSFT , KC_PGDN , KC_PGUP , KC_PSCR    , KC_LGUI , XXXXXXX , KC_HOME , KC_LEFT , KC_DOWN , KC_UP , KC_RIGHT , KC_END  ,
         KC_LCTL , KC_F1   , KC_F2   , KC_F3      , KC_F4   , KC_F5   , KC_F6   , KC_F7   , KC_F8   , KC_F9 , KC_F10   , KC_F11  ,
         KC_DEL  , _______ , KC_SPC  , KC_ENT     , RAISE   , TD(ALT)
     ),
@@ -28,7 +28,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_TUNE] = LAYOUT_split_3x6_3(
         XXXXXXX , RGB_M_P , RGB_M_B , RGB_M_R , RGB_M_SW , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX ,
-        RGB_TOG , HUI     , XXXXXXX , XXXXXXX , XXXXXXX  , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX ,
+        RGB_M_G , HUI     , XXXXXXX , XXXXXXX , XXXXXXX  , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX ,
         XXXXXXX , HUD     , XXXXXXX , XXXXXXX , XXXXXXX  , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX , XXXXXXX ,
         KC_DEL  , _______ , KC_SPC  , KC_ENT  , _______  , TD(ALT)
     )

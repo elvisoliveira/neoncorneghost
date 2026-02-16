@@ -17,15 +17,16 @@
 #define SPLIT_WPM_ENABLE
 
 #ifdef RGBLIGHT_ENABLE // si la linea RGBLIGHT_ENABLE = yes esta en rules.mk
-    #undef RGBLED_NUM
-    #define RGBLED_NUM 54 // numero de LEDs en el teclado
+    // #undef RGBLED_NUM
+    // #define RGBLED_NUM 54 // numero de LEDs en el teclado
     #undef RGBLED_SPLIT
     #define RGBLED_SPLIT \
         {27,27}
     #define RGBLIGHT_EFFECT_BREATHING // incluyendo el efecto RGB breathing
     #define RGBLIGHT_EFFECT_RAINBOW_MOOD // incluyendo el efecto RGB rainbow mood
     #define RGBLIGHT_EFFECT_RAINBOW_SWIRL
-    #define RGBLIGHT_LIMIT_VAL 110 // maximo valor para Value en HSV
+    // #undef RGBLIGHT_LIMIT_VAL
+    // #define RGBLIGHT_LIMIT_VAL 110 // maximo valor para Value en HSV
     #define RGBLIGHT_HUE_STEP 5 // valor del step al modificar Hue
     #define RGBLIGHT_SAT_STEP 17 // valor del step al modificar Saturation
     #define RGBLIGHT_VAL_STEP 17 // valor del step al modificar Value
