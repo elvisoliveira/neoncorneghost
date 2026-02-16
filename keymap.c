@@ -23,7 +23,7 @@ enum custom_keycodes {
     QUOTE,
     CIRC,
     WAVE,
-    VERTICALBAR,
+    VERTBAR,
     GRAVE,
     HUI,
     HUD
@@ -50,10 +50,11 @@ enum td_keycodes {
 // Keymap data moved to external header for easier editing
 #include "keymap_layers.h"
 
-// ---------------------- variables -----------------------------
+// ---------------------- constants -----------------------------
 
-#define ANIM_SIZE_GHOST 128 // number of bytes per ghost animation frame (stored in PROGMEM)
+#define ANIM_SIZE_GHOST 128 // bytes per ghost animation frame (stored in PROGMEM)
 #define ANIM_FRAME_DURATION 200 // milliseconds to show each animation frame
+#define OLED_SLEEP_TIMEOUT_MS 120000
 
 led_t led_usb_state;
 
@@ -79,6 +80,14 @@ char wpm_str[4];
 
 // --------------------------------------------------------------
 
+static void format_3digits(uint8_t value, char out[4]) {
+    out[3] = '\0';
+    out[2] = '0' + value % 10;
+    value /= 10;
+    out[1] = '0' + value % 10;
+    out[0] = '0' + value / 10;
+}
+
 // Runs once right after the keyboard finishes initializing. Use this to
 // read initial hardware state and initialize runtime variables that depend
 // on that state. Here we capture the current RGB hue and set the working
@@ -91,46 +100,28 @@ void keyboard_post_init_user(void) {
 
 // layer_state_set_user is a QMK hook called whenever the layer state
 // changes. The "highest" active layer (the one with highest index that is
-// currently enabled) is used to decide the RGB color. We avoid changing
-// RGB when Caps Lock is on because led_set_user() forces a Caps Lock
-// indicator color separately.
+// currently enabled) is used to decide the RGB color.
 layer_state_t layer_state_set_user(layer_state_t state) {
     switch (get_highest_layer(state)) {
         case _TUNE:
             // TUNE layer uses a white RGB for clarity.
-            if (!host_keyboard_led_state().caps_lock) {
-                rgblight_sethsv(HSV_WHITE);
-            }
+            rgblight_sethsv(HSV_WHITE);
             break;
         case _RAISE:
             // RAISE layer uses a bluish tint.
-            if (!host_keyboard_led_state().caps_lock) {
-                rgblight_sethsv(245, 255, current_val);
-            }
+            rgblight_sethsv(HSV_BLUE);
             break;
         case _LOWER:
             // LOWER layer uses teal.
-            if (!host_keyboard_led_state().caps_lock) {
-                rgblight_sethsv(HSV_TEAL);
-            }
+            rgblight_sethsv(HSV_TEAL);
             break;
         case _BASE:
             // BASE layer uses the user's selected hue.
-            if (!host_keyboard_led_state().caps_lock) {
-                rgblight_sethsv(current_hue, 255, current_val);
-            }
+            rgblight_sethsv(HSV_GREEN);
             break;
     }
     return state;
 }
-
-// void led_set_user(uint8_t usb_led) {
-//     if (usb_led & (1<<USB_LED_CAPS_LOCK)) {
-//         rgblight_sethsv(22, 255, current_val); // yellow for Caps Lock
-//     } else { 
-//         rgblight_sethsv(current_hue, 255, current_val);
-//     }
-// }
 
 #ifdef OLED_ENABLE // only compile OLED code if OLED is enabled in rules.mk
 #include <stdio.h>
@@ -148,17 +139,9 @@ static void render_layer(void) {
 }
 
 static void render_mode(void) {
-    mode_str[3] = '\0';
-    mode_str[2] = '0' + mode_value % 10;
-    mode_str[1] = '0' + ( mode_value /= 10) % 10;
-    mode_str[0] = '0' + mode_value / 10;
     // Format the RGB mode number as a 3-digit ASCII string and print it.
-    // mode_value comes from rgblight_get_mode(). Note: the code below uses
-    // the "/=" operator which mutates mode_value. That works here because
-    // mode_value is a copy of the global retrieved earlier in oled_task_user(),
-    // but be careful if you refactor this code.
-    oled_write("MODE ", false);
-    oled_write(" ", false);
+    format_3digits(mode_value, mode_str);
+    oled_write("MODE  ", false);
     oled_write(mode_str, false);
 }
 
@@ -169,48 +152,25 @@ static void render_mode(void) {
 // copy them into a temporary variable first.
 static void render_hsv(void) {
     oled_write("H ", false);
-    hue_str[3] = '\0';
-    hue_str[2] = '0' + hue_value % 10;
-    hue_str[1] = '0' + ( hue_value /= 10) % 10;
-    hue_str[0] = '0' + hue_value / 10;
+    format_3digits(hue_value, hue_str);
     oled_write(hue_str, false);
 
     oled_write("S ", false);
-    sat_str[3] = '\0';
-    sat_str[2] = '0' + sat_value % 10;
-    sat_str[1] = '0' + ( sat_value /= 10) % 10;
-    sat_str[0] = '0' + sat_value / 10;
+    format_3digits(sat_value, sat_str);
     oled_write(sat_str, false);
 
     oled_write("V ", false);
-    val_str[3] = '\0';
-    val_str[2] = '0' + val_value % 10;
-    val_str[1] = '0' + ( val_value /= 10) % 10;
-    val_str[0] = '0' + val_value / 10;
-    oled_write(val_str, false);    
+    format_3digits(val_value, val_str);
+    oled_write(val_str, false);
 }
-
-
-/*
-static void render_wpm(void) {
-    oled_write("WPM\n", false);
-    sprintf(wpm_str, "%03d", current_wpm);
-    oled_write(wpm_str, false); // print WPM value
-}
-*/
 
 // Initialize the OLED rotation for each half. Returning a rotation here
 // tells the OLED driver how to orient the display. This board uses the
 // same rotation (270 degrees) for both master and slave so the graphics
 // align correctly with the physical mounting.
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-    if (is_keyboard_master()) {
-        return OLED_ROTATION_270;
-    }
-    else {
-        return OLED_ROTATION_270;
-    }
-    return rotation;
+    (void)rotation;
+    return OLED_ROTATION_270;
 }
 
 // OLED characteristics: 128x32 pixels. Internally the driver operates in
@@ -223,7 +183,9 @@ bool oled_task_user(void) {
     hue_value = rgblight_get_hue();
     sat_value = rgblight_get_sat();
     val_value = rgblight_get_val();
-    if ((timer_elapsed32(anim_ghost_sleep) > 120000) && (timer_elapsed32(anim_fishing_sleep) > 120000) && (current_wpm == 0)) {
+    if ((timer_elapsed32(anim_ghost_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
+        (timer_elapsed32(anim_fishing_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
+        (current_wpm == 0)) {
         if (is_oled_on()) {
             oled_off();
         }
@@ -254,7 +216,7 @@ bool oled_task_user(void) {
 #endif // OLED_ENABLE
 
 // process_record_user handles custom keycodes defined earlier (LOWER,
-// RAISE, QUOTE, CIRC, WAVE, VERTICALBAR, GRAVE, HUI, HUD) and is called on
+// RAISE, QUOTE, CIRC, WAVE, VERTBAR, GRAVE, HUI, HUD) and is called on
 // every key event. Return false from a case to indicate that we've handled
 // the key and QMK should not perform default processing for it. Typical
 // uses here are:
@@ -267,10 +229,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case HUI:
             if (record->event.pressed) {
-                current_hue = current_hue + 5;
-                if (current_hue > 255) {
-                    current_hue = current_hue - 256;
-                }
+                current_hue += 5;
             }
             else {
                 ;
@@ -278,10 +237,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case HUD:
             if (record->event.pressed) {
-                current_hue = current_hue - 5;
-                if (current_hue < 0) {
-                    current_hue = 256 + current_hue;
-                }
+                current_hue -= 5;
             }
             else {
                 ;
@@ -341,7 +297,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_SPACE);
             }
             return false;
-        case VERTICALBAR:
+        case VERTBAR:
             if (record->event.pressed) {
                 register_code(KC_LSFT);
                 register_code(KC_SLASH);
