@@ -24,7 +24,9 @@ static void master_render_ghost(void) {
     // keymap.c size and improve maintainability. This header defines
     // the following function-local PROGMEM arrays:
     //   hide[], shyguy[], eerie[], scare[], troll[], laugh[]
-    #include "oled_ghost_anims.h"
+    #define OLED_ANIMS_GHOST
+    #include "oled_anims.h"
+    #undef OLED_ANIMS_GHOST
 
     void animate_ghost(void) {
         current_ghost_frame = (current_ghost_frame + 1) % 2; // alternate between frame 0 and 1
@@ -82,7 +84,9 @@ static void slave_render_ghost(void) {
     // current_ghost_frame and writes the appropriate frame to the slave OLED.
     // Fishing animation frames moved to a separate header to reduce
     // keymap.c size. Included here so `fishing` remains function-local.
-    #include "oled_fishing_anims.h"
+    #define OLED_ANIMS_FISHING
+    #include "oled_anims.h"
+    #undef OLED_ANIMS_FISHING
     // Toggle and draw the fishing animation on the slave OLED at the
     // configured frame rate. The sleep timer is updated when the user is
     // typing to keep the display active.
