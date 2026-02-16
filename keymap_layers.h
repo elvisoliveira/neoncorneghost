@@ -8,7 +8,7 @@
 // Using macros makes it easier to change the combos in one place.
 #define RALT_1    RALT(KC_1)
 #define RALT_SLSH RALT(KC_SLSH)
-#define META      MT(MOD_LALT, KC_ESC)
+#define META      MT(KC_LALT, KC_ESC) // Hold for Left Alt, tap for KC_ESC
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3(
@@ -19,13 +19,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           KC_LCTL,      KC_Z,      KC_X,      KC_C,      KC_V,      KC_B,                               KC_N,      KC_M,   KC_COMM,    KC_DOT,   KC_SLSH,    KC_ESC,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
-                                                         META,     LOWER,    KC_SPC,       KC_ENT,     RAISE,   TD(ALT)
+                                                     META,     LOWER,    KC_SPC,       KC_ENT,     RAISE,   TD(ALT)
     //                                            |----------+----------+----------|  |----------+----------+----------|
     ),
 
     [_LOWER] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-           KC_TAB,      KC_1,      KC_2,      KC_3,      KC_4,      KC_5,                               KC_6,      KC_7,      KC_8,      KC_9,      KC_0,   KC_BSPC,
+     LGUI(KC_TAB),      KC_1,      KC_2,      KC_3,      KC_4,      KC_5,                               KC_6,      KC_7,      KC_8,      KC_9,      KC_0,   KC_BSPC,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           KC_LSFT,   KC_PGDN,   KC_PGUP,   KC_PSCR,   KC_LGUI,   XXXXXXX,                            KC_HOME,   KC_LEFT,   KC_DOWN,     KC_UP,  KC_RIGHT,    KC_END,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
@@ -39,7 +39,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
            KC_TAB,   KC_EXLM,     KC_AT,   KC_HASH,    KC_DLR,   KC_PERC,                            XXXXXXX,   KC_AMPR,   KC_ASTR,   KC_LPRN,   KC_RPRN,   KC_BSPC,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          KC_LSFT,   KC_LBRC,   KC_RBRC,   KC_LCBR,   KC_RCBR,   KC_BSLS,                           KC_EQUAL,   KC_PLUS,   KC_MINS,   KC_ASTR,   KC_PSLS,   KC_UNDS,
+          KC_LSFT,   KC_LBRC,   KC_RBRC,   KC_LCBR,   KC_RCBR,   KC_BSLS,                            KC_LEFT,   KC_DOWN,     KC_UP,  KC_RIGHT,  KC_EQUAL,   KC_UNDS,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           KC_LCTL,    RALT_1, RALT_SLSH,   XXXXXXX,   XXXXXXX,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
