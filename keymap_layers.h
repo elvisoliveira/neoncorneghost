@@ -48,7 +48,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_TUNE] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          XXXXXXX,   RGB_M_P,   RGB_M_B,   RGB_M_R,  RGB_M_SW,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,
+          UG_TOGG,   RGB_M_P,   RGB_M_B,   RGB_M_R,  RGB_M_SW,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           RGB_M_G,       HUI,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|

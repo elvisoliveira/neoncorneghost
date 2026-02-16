@@ -62,6 +62,7 @@ uint32_t anim_ghost_timer;
 uint32_t anim_ghost_sleep;
 uint32_t anim_fishing_timer;
 uint32_t anim_fishing_sleep;
+uint32_t oled_last_input;
 
 uint8_t current_wpm = 0;
 uint8_t current_ghost_frame = 0;
@@ -69,14 +70,13 @@ uint8_t hue_value;
 uint8_t sat_value;
 uint8_t val_value;
 uint8_t mode_value;
-uint8_t current_hue;
-uint8_t current_val;
-
 char hue_str[4];
 char sat_str[4];
 char val_str[4];
 char mode_str[4];
 char wpm_str[4];
+
+static bool rgb_allowed = false;
 
 // --------------------------------------------------------------
 
@@ -88,39 +88,8 @@ static void format_3digits(uint8_t value, char out[4]) {
     out[0] = '0' + value / 10;
 }
 
-// Runs once right after the keyboard finishes initializing. Use this to
-// read initial hardware state and initialize runtime variables that depend
-// on that state. Here we capture the current RGB hue and set the working
-// brightness limit.
 void keyboard_post_init_user(void) {
-    current_hue = rgblight_get_hue();
-    // Use the configured brightness limit so we don't exceed it later.
-    current_val = RGBLIGHT_LIMIT_VAL;
-}
-
-// layer_state_set_user is a QMK hook called whenever the layer state
-// changes. The "highest" active layer (the one with highest index that is
-// currently enabled) is used to decide the RGB color.
-layer_state_t layer_state_set_user(layer_state_t state) {
-    switch (get_highest_layer(state)) {
-        case _TUNE:
-            // TUNE layer uses a white RGB for clarity.
-            rgblight_sethsv(HSV_WHITE);
-            break;
-        case _RAISE:
-            // RAISE layer uses a bluish tint.
-            rgblight_sethsv(HSV_BLUE);
-            break;
-        case _LOWER:
-            // LOWER layer uses teal.
-            rgblight_sethsv(HSV_TEAL);
-            break;
-        case _BASE:
-            // BASE layer uses the user's selected hue.
-            rgblight_sethsv(HSV_GREEN);
-            break;
-    }
-    return state;
+    oled_last_input = timer_read32();
 }
 
 #ifdef OLED_ENABLE // only compile OLED code if OLED is enabled in rules.mk
@@ -185,15 +154,12 @@ bool oled_task_user(void) {
     val_value = rgblight_get_val();
     if ((timer_elapsed32(anim_ghost_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
         (timer_elapsed32(anim_fishing_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
-        (current_wpm == 0)) {
+        (timer_elapsed32(oled_last_input) > OLED_SLEEP_TIMEOUT_MS)) {
         if (is_oled_on()) {
             oled_off();
         }
         timer_init();
         return false;
-    }
-    if (current_wpm != 0 && !is_oled_on()) {
-        oled_on();
     }
     led_usb_state = host_keyboard_led_state();
     if (is_keyboard_master()) { // master OLED: ghost animation + status
@@ -223,26 +189,35 @@ bool oled_task_user(void) {
 // - Toggle layers (layer_on/layer_off and update_tri_layer for tri-layer)
 // - Emit multiple keycodes (register_code/unregister_code) to produce
 //   small macros (e.g., quote + space)
-// - Adjust runtime variables (e.g., current_hue for RGB
-//   control)
+// - Adjust runtime variables
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+        oled_last_input = timer_read32();
+        anim_ghost_sleep = oled_last_input;
+        anim_fishing_sleep = oled_last_input;
+        if (!is_oled_on()) {
+            oled_on();
+        }
+    }
     switch (keycode) {
+        case UG_TOGG:
+            if (record->event.pressed) {
+                rgb_allowed = true;
+            }
+            return true;
+        // HUI: increase RGB hue (no EEPROM write)
         case HUI:
             if (record->event.pressed) {
-                current_hue += 5;
-            }
-            else {
-                ;
+                rgblight_increase_hue_noeeprom();
             }
             return false;
+        // HUD: decrease RGB hue (no EEPROM write)
         case HUD:
             if (record->event.pressed) {
-                current_hue -= 5;
-            }
-            else {
-                ;
+                rgblight_decrease_hue_noeeprom();
             }
             return false;
+        // LOWER: momentary LOWER layer with tri-layer update
         case LOWER:
             if (record->event.pressed) {
                 layer_on(_LOWER);
@@ -253,6 +228,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 update_tri_layer(_LOWER, _RAISE, _TUNE);
             }
             return false;
+        // RAISE: momentary RAISE layer with tri-layer update
         case RAISE:
             if (record->event.pressed) {
                 layer_on(_RAISE);
@@ -263,6 +239,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 update_tri_layer(_LOWER, _RAISE, _TUNE);
             }
             return false;
+        // QUOTE: emit a quote followed by a space
         case QUOTE:
             if (record->event.pressed) {
                 register_code(KC_QUOTE);
@@ -273,6 +250,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_SPACE);
             }
             return false;
+        // CIRC: emit caret (Shift+6) followed by a space
         case CIRC:
             if (record->event.pressed) {
                 register_code(KC_LSFT);
@@ -285,6 +263,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_SPACE);
             }
             return false;
+        // WAVE: emit tilde (Shift+Grave) followed by a space
         case WAVE:
             if (record->event.pressed) {
                 register_code(KC_LSFT);
@@ -297,6 +276,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_SPACE);
             }
             return false;
+        // VERTBAR: emit pipe (Shift+Slash)
         case VERTBAR:
             if (record->event.pressed) {
                 register_code(KC_LSFT);
@@ -307,6 +287,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_SLASH);
             }
             return false; 
+        // GRAVE: emit grave accent followed by a space
         case GRAVE:
             if (record->event.pressed) {
                 register_code(KC_GRAVE);
@@ -319,4 +300,29 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
     }
     return true;
+}
+
+void matrix_scan_user(void) {
+    if (!rgb_allowed) {
+        rgblight_disable_noeeprom();
+        return;
+    }
+    if (rgblight_get_mode() != RGBLIGHT_MODE_STATIC_LIGHT) {
+        return;
+    }
+    switch (get_highest_layer(layer_state)) {
+        case _TUNE:
+            rgblight_sethsv(HSV_RED);
+            break;
+        case _RAISE:
+            rgblight_sethsv(HSV_GREEN);
+            break;
+        case _LOWER:
+            rgblight_sethsv(HSV_BLUE);
+            break;
+        case _BASE:
+        default:
+            rgblight_sethsv(HSV_WHITE);
+            break;
+    }
 }
