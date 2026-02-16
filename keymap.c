@@ -70,6 +70,7 @@ uint8_t hue_value;
 uint8_t sat_value;
 uint8_t val_value;
 uint8_t mode_value;
+
 char hue_str[4];
 char sat_str[4];
 char val_str[4];
@@ -80,106 +81,11 @@ static bool rgb_allowed = false;
 
 // --------------------------------------------------------------
 
-static void format_3digits(uint8_t value, char out[4]) {
-    out[3] = '\0';
-    out[2] = '0' + value % 10;
-    value /= 10;
-    out[1] = '0' + value % 10;
-    out[0] = '0' + value / 10;
-}
-
 void keyboard_post_init_user(void) {
     oled_last_input = timer_read32();
+
+    rgblight_disable_noeeprom();
 }
-
-#ifdef OLED_ENABLE // only compile OLED code if OLED is enabled in rules.mk
-#include <stdio.h>
-#include "ghost.h"
-
-// Render the textual layer indicator on the OLED. Each line writes the layer
-// name and highlights (inverted text) the currently active layer. The
-// function uses layer_state_is() and layer_state flags to decide which name
-// to highlight. Keep the output compact so it fits on the small OLED.
-static void render_layer(void) {
-    oled_write_P(PSTR("RAISE"), layer_state_is(_RAISE) && !layer_state_is(_TUNE));
-    oled_write_P(PSTR("BASE\n"), layer_state_is(_BASE));
-    oled_write_P(PSTR("LOWER"), layer_state_is(_LOWER) && !layer_state_is(_TUNE));
-    oled_write_P(PSTR("TUNE\n"), layer_state_is(_TUNE));
-}
-
-static void render_mode(void) {
-    // Format the RGB mode number as a 3-digit ASCII string and print it.
-    format_3digits(mode_value, mode_str);
-    oled_write("MODE  ", false);
-    oled_write(mode_str, false);
-}
-
-// Print current Hue, Saturation and Value (HSV) to the OLED.
-// The function converts numeric HSV values into 3-char ASCII strings for
-// compact display. Note: the implementation uses in-place division (x /= 10)
-// which mutates the source variable; if you need the original values later
-// copy them into a temporary variable first.
-static void render_hsv(void) {
-    oled_write("H ", false);
-    format_3digits(hue_value, hue_str);
-    oled_write(hue_str, false);
-
-    oled_write("S ", false);
-    format_3digits(sat_value, sat_str);
-    oled_write(sat_str, false);
-
-    oled_write("V ", false);
-    format_3digits(val_value, val_str);
-    oled_write(val_str, false);
-}
-
-// Initialize the OLED rotation for each half. Returning a rotation here
-// tells the OLED driver how to orient the display. This board uses the
-// same rotation (270 degrees) for both master and slave so the graphics
-// align correctly with the physical mounting.
-oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-    (void)rotation;
-    return OLED_ROTATION_270;
-}
-
-// OLED characteristics: 128x32 pixels. Internally the driver operates in
-// 8-pixel-high pages (so 128/8 = 16 pages across 128 pixels). This task
-// is called periodically by QMK and is responsible for drawing content on
-// each OLED.
-bool oled_task_user(void) {
-    current_wpm = get_current_wpm();
-    mode_value = rgblight_get_mode();
-    hue_value = rgblight_get_hue();
-    sat_value = rgblight_get_sat();
-    val_value = rgblight_get_val();
-    if ((timer_elapsed32(anim_ghost_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
-        (timer_elapsed32(anim_fishing_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
-        (timer_elapsed32(oled_last_input) > OLED_SLEEP_TIMEOUT_MS)) {
-        if (is_oled_on()) {
-            oled_off();
-        }
-        timer_init();
-        return false;
-    }
-    led_usb_state = host_keyboard_led_state();
-    if (is_keyboard_master()) { // master OLED: ghost animation + status
-        oled_set_cursor(0,1);
-        master_render_ghost(); // ghost animation
-        oled_set_cursor(0,6);
-        render_layer(); // layer indicators
-        oled_set_cursor(0,11);
-        render_hsv(); // HSV values
-    }
-    else { // slave OLED: fishing animation + mode
-        oled_set_cursor(0,1);
-        slave_render_ghost();
-        oled_set_cursor(0,13);
-        render_mode();
-    }
-    return false;
-}
-
-#endif // OLED_ENABLE
 
 // process_record_user handles custom keycodes defined earlier (LOWER,
 // RAISE, QUOTE, CIRC, WAVE, VERTBAR, GRAVE, HUI, HUD) and is called on
@@ -191,6 +97,7 @@ bool oled_task_user(void) {
 //   small macros (e.g., quote + space)
 // - Adjust runtime variables
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    #ifdef OLED_ENABLE
     if (record->event.pressed) {
         oled_last_input = timer_read32();
         anim_ghost_sleep = oled_last_input;
@@ -199,8 +106,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             oled_on();
         }
     }
+    #endif // OLED_ENABLE
     switch (keycode) {
         case UG_TOGG:
+            // if RGBLIGHT is enabled, we want to allow it to be turned on by the UG_TOGG keycode
             if (record->event.pressed) {
                 rgb_allowed = true;
             }
@@ -302,6 +211,59 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+#ifdef OLED_ENABLE // only compile OLED code if OLED is enabled in rules.mk
+#include "ghost.h"
+#include "oled_render.h"
+
+// Initialize the OLED rotation for each half. Returning a rotation here
+// tells the OLED driver how to orient the display. This board uses the
+// same rotation (270 degrees) for both master and slave so the graphics
+// align correctly with the physical mounting.
+oled_rotation_t oled_init_user(oled_rotation_t rotation) {
+    (void)rotation;
+    return OLED_ROTATION_270;
+}
+
+// OLED characteristics: 128x32 pixels. Internally the driver operates in
+// 8-pixel-high pages (so 128/8 = 16 pages across 128 pixels). This task
+// is called periodically by QMK and is responsible for drawing content on
+// each OLED.
+bool oled_task_user(void) {
+    current_wpm = get_current_wpm();
+    mode_value = rgblight_get_mode();
+    hue_value = rgblight_get_hue();
+    sat_value = rgblight_get_sat();
+    val_value = rgblight_get_val();
+    if ((timer_elapsed32(anim_ghost_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
+        (timer_elapsed32(anim_fishing_sleep) > OLED_SLEEP_TIMEOUT_MS) &&
+        (timer_elapsed32(oled_last_input) > OLED_SLEEP_TIMEOUT_MS)) {
+        if (is_oled_on()) {
+            oled_off();
+        }
+        timer_init();
+        return false;
+    }
+    led_usb_state = host_keyboard_led_state();
+    if (is_keyboard_master()) { // master OLED: ghost animation + status
+        oled_set_cursor(0,1);
+        master_render_ghost(); // ghost animation
+        oled_set_cursor(0,6);
+        render_layer(); // layer indicators
+        oled_set_cursor(0,11);
+        render_hsv(); // HSV values
+    }
+    else { // slave OLED: fishing animation + mode
+        oled_set_cursor(0,1);
+        slave_render_ghost();
+        oled_set_cursor(0,13);
+        render_mode();
+    }
+    return false;
+}
+#endif // OLED_ENABLE
+
+// only compile RGBLIGHT code if RGBLIGHT is enabled in rules.mk
+#ifdef RGBLIGHT_ENABLE
 void matrix_scan_user(void) {
     if (!rgb_allowed) {
         rgblight_disable_noeeprom();
@@ -326,3 +288,4 @@ void matrix_scan_user(void) {
             break;
     }
 }
+#endif // RGBLIGHT_ENABLE
