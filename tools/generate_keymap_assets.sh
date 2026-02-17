@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Inputs
-LAYER_FILE="../layers.h"
+LAYER_FILE="./layers.h"
 
 # Arguments
 PARSE_ARGS=(parse -c 10 -q -)
@@ -26,7 +26,7 @@ keymap "${PARSE_ARGS[@]}" < "${TMP_C2JSON}" > "${TMP_PARSE}"
 
 # Step 3: render each requested layer into its own SVG without using pipes
 for LAYER in "${LAYERS[@]}"; do
-    OUT_FILE="keymap/keymap_${LAYER}.svg"
+    OUT_FILE="./tools/keymap/keymap_${LAYER}.svg"
 
     # keymap draw expects '-' to read from stdin; we redirect TMP_PARSE into stdin
     keymap "${DRAW_BASE_ARGS[@]}" "${LAYER}" -- - < "${TMP_PARSE}" > "${OUT_FILE}"

@@ -11,7 +11,8 @@
 // Using macros makes it easier to change the combos in one place.
 #define RALT_1    RALT(KC_1)
 #define RALT_SLSH RALT(KC_SLSH)
-#define META      MT(KC_LALT, KC_ESC) // Hold for Left Alt, tap for KC_ESC
+#define META_L    MT(KC_LALT, KC_ESC) // Hold for Left Alt, tap for KC_ESC
+#define META_R    MT(KC_RALT, KC_ESC) // Hold for Right Alt, tap for KC_ESC
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3(
@@ -22,7 +23,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           KC_LCTL,      KC_Z,      KC_X,      KC_C,      KC_V,      KC_B,                               KC_N,      KC_M,   KC_COMM,    KC_DOT,   KC_SLSH,    KC_ESC,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
-                                                     META,  KC_LOWER,    KC_SPC,       KC_ENT,  KC_RAISE,   TD(ALT)
+                                                       META_L,  KC_LOWER,    KC_SPC,       KC_ENT,  KC_RAISE,    META_R
     //                                            |----------+----------+----------|  |----------+----------+----------|
     ),
 
@@ -52,7 +53,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_TUNE] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          UG_TOGG,   RGB_M_P,   RGB_M_B,   RGB_M_R,  RGB_M_SW,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX, KC_OLED_TG,
+          UG_TOGG,   RGB_M_P,   RGB_M_B,   RGB_M_R,  RGB_M_SW,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,KC_OLED_TG,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           RGB_M_G,       HUI,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,                            XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|

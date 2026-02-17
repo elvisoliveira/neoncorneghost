@@ -13,13 +13,14 @@
 
 XINPUT_DEVICE_ID=14
 
-DEFAULT_WALLPAPER="./keymap/keymap_L0.png"
+KEYMAP_DIR="./tools/keymap"
 
-# Key press wallpapers (keycodes 191, 192, 193)
+DEFAULT_WALLPAPER="$KEYMAP_DIR/keymap_L0.png"
+
 declare -A PRESS_WALLPAPERS=(
-    [191]="./keymap/keymap_L1.png"
-    [192]="./keymap/keymap_L2.png"
-    [193]="./keymap/keymap_L3.png"
+    [191]="$KEYMAP_DIR/keymap_L1.png"
+    [192]="$KEYMAP_DIR/keymap_L2.png"
+    [193]="$KEYMAP_DIR/keymap_L3.png"
 )
 
 # ---[ END CONFIGURATION ]------------------------------------
