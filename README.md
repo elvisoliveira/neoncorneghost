@@ -54,4 +54,10 @@ Troubleshooting
 - If the build fails with missing headers, ensure the files above are present in the same directory as `keymap.c`.
 - If flashing fails, check bootloader mode for the controller (Pro Micro / Elite C) and use the corresponding `-bl` option shown above.
 
-If you'd like, I can also add a short development guide for modifying the OLED frames or add a Makefile/CI step to build automatically.
+## Exporting a Keymap
+
+You can export your current layout by generating `keymap.json`:
+
+```console
+qmk c2json -kb crkbd/rev1/common -km neoncorneghost ./layers.h  > keymap.json
+```

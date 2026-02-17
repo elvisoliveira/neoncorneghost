@@ -43,6 +43,24 @@ void keyboard_post_init_user(void) {
     rgblight_disable_noeeprom();
 }
 
+layer_state_t layer_state_set_user(layer_state_t state) {
+    uint8_t layer = get_highest_layer(state);
+    switch (layer) {
+        case _RAISE:
+            tap_code(KC_F13);
+            break;
+        case _LOWER:
+            tap_code(KC_F14);
+            break;
+        case _TUNE:
+            tap_code(KC_F15);
+            break;
+        default:
+            break;
+    }
+    return state;
+}
+
 // process_record_user handles custom keycodes defined earlier (KC_LOWER,
 // KC_RAISE, HUI, HUD) and is called on
 // every key event. Return false from a case to indicate that we've handled
