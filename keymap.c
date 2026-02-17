@@ -43,21 +43,36 @@ void keyboard_post_init_user(void) {
     rgblight_disable_noeeprom();
 }
 
-layer_state_t layer_state_set_user(layer_state_t state) {
-    uint8_t layer = get_highest_layer(state);
+static uint16_t layer_hold_keycode(uint8_t layer) {
     switch (layer) {
         case _RAISE:
-            tap_code(KC_F13);
-            break;
+            return KC_F13;
         case _LOWER:
-            tap_code(KC_F14);
-            break;
+            return KC_F14;
         case _TUNE:
-            tap_code(KC_F15);
-            break;
+            return KC_F15;
         default:
-            break;
+            return KC_NO;
     }
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    static uint8_t previous_layer = 0xFF;
+    uint8_t layer = get_highest_layer(state);
+
+    uint16_t previous_keycode = layer_hold_keycode(previous_layer);
+    uint16_t current_keycode  = layer_hold_keycode(layer);
+
+    if (previous_layer != layer) {
+        if (previous_keycode != KC_NO) {
+            unregister_code(previous_keycode);
+        }
+        if (current_keycode != KC_NO) {
+            register_code(current_keycode);
+        }
+    }
+
+    previous_layer = layer;
     return state;
 }
 
