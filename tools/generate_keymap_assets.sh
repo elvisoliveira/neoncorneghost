@@ -13,6 +13,8 @@ LAYERS=(L0 L1 L2 L3)
 # base draw args (we'll append the specific layer in the loop)
 DRAW_BASE_ARGS=(draw --qmk-keyboard "crkbd/rev1/common" --select-layers)
 
+CONFIG="--config ./tools/config.yaml"
+
 # Create temporary files and ensure they're removed on exit
 TMP_C2JSON=$(mktemp)
 TMP_PARSE=$(mktemp)
@@ -22,14 +24,14 @@ trap 'rm -f "${TMP_C2JSON}" "${TMP_PARSE}"' EXIT
 qmk c2json "${LAYER_FILE}" > "${TMP_C2JSON}"
 
 # Step 2: keymap parse ... reads from TMP_C2JSON and writes to TMP_PARSE
-keymap "${PARSE_ARGS[@]}" < "${TMP_C2JSON}" > "${TMP_PARSE}"
+keymap $CONFIG "${PARSE_ARGS[@]}" < "${TMP_C2JSON}" > "${TMP_PARSE}"
 
 # Step 3: render each requested layer into its own SVG without using pipes
 for LAYER in "${LAYERS[@]}"; do
     OUT_FILE="./tools/keymap/keymap_${LAYER}.svg"
 
     # keymap draw expects '-' to read from stdin; we redirect TMP_PARSE into stdin
-    keymap "${DRAW_BASE_ARGS[@]}" "${LAYER}" -- - < "${TMP_PARSE}" > "${OUT_FILE}"
+    keymap $CONFIG "${DRAW_BASE_ARGS[@]}" "${LAYER}" -- - < "${TMP_PARSE}" > "${OUT_FILE}"
 
     # Try to convert the generated SVG to PNG using a available tool.
     # Prefer rsvg-convert, then inkscape (new/old CLI), then ImageMagick 'convert'.
