@@ -1,65 +1,172 @@
 draw_config:
-  append_colon_to_layer_header: true
-  arc_radius: 6.0
-  arc_scale: 1.0
-  combo_h: 26.0
-  combo_w: 28.0
-  inner_pad_h: 2.0
-  inner_pad_w: 2.0
-  key_h: 56.0
   dark_mode: true
-  key_rx: 6.0
-  key_ry: 6.0
-  key_w: 60.0
-  line_spacing: 1.2
-  outer_pad_h: 56.0
-  outer_pad_w: 30.0
-  small_pad: 2.0
-  split_gap: 30.0
+  small_pad: 5
+  svg_style: |
+    svg path {
+        fill: inherit;
+    }
+
+    /* font and background color specifications */
+    svg.keymap {
+        font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+        font-size: 12px;
+        text-rendering: optimizeLegibility;
+        fill: #24292e;
+    }
+
+    /* default key styling */
+    rect.key {
+        fill: #f6f8fa;
+    }
+
+    rect.key, rect.combo {
+        stroke: #c9cccf;
+        stroke-width: 1;
+    }
+
+    /* default key side styling, only used is draw_key_sides is set */
+    rect.side {
+        filter: brightness(90%);
+    }
+
+    /* color accent for combo boxes */
+    rect.combo, rect.combo-separate {
+        fill: #cdf;
+    }
+
+    /* color accent for held keys */
+    rect.held, rect.combo.held {
+        fill: #fdd;
+    }
+
+    /* color accent for ghost (optional) keys */
+    rect.ghost, rect.combo.ghost {
+        stroke-dasharray: 4, 4;
+        stroke-width: 2;
+    }
+
+    text {
+        text-anchor: middle;
+        dominant-baseline: middle;
+    }
+
+    /* styling for layer labels */
+    text.label {
+        font-weight: bold;
+        text-anchor: start;
+        stroke: white;
+        stroke-width: 4;
+        paint-order: stroke;
+    }
+
+    /* styling for optional footer */
+    text.footer {
+        text-anchor: end;
+        dominant-baseline: auto;
+        stroke: white;
+        stroke-width: 4;
+        paint-order: stroke;
+    }
+
+    /* styling for combo tap, and key non-tap label text */
+    text.combo, text.hold, text.shifted, text.left, text.right, text.tl, text.tr, text.bl, text.br {
+        font-size: 11px;
+    }
+
+    text.hold, text.bl, text.br {
+        text-anchor: middle;
+        dominant-baseline: auto;
+    }
+
+    text.shifted, text.tl, text.tr {
+        text-anchor: middle;
+        dominant-baseline: hanging;
+    }
+
+    text.left, text.tl, text.bl {
+        text-anchor: start;
+    }
+
+    text.right, text.tr, text.br {
+        text-anchor: end;
+    }
+
+    text.layer-activator {
+        text-decoration: underline;
+    }
+
+    /* styling for hold/shifted label text in combo box */
+    text.combo.hold, text.combo.shifted, text.combo.left, text.combo.right {
+        font-size: 8px;
+    }
+
+    /* lighter symbol for transparent keys */
+    text.trans {
+        fill: #7b7e81;
+    }
+
+    /* styling for combo dendrons */
+    path.combo {
+        stroke-width: 1;
+        stroke: gray;
+        fill: none;
+    }
+
+    /* Start Tabler Icons Cleanup */
+    /* cannot use height/width with glyphs */
+    .icon-tabler > path {
+        fill: inherit;
+        stroke: inherit;
+        stroke-width: 2;
+    }
+    /* hide tabler's default box */
+    .icon-tabler > path[stroke="none"][fill="none"] {
+        visibility: hidden;
+    }
 parse_config:
   qmk_keycode_map:
     KC_1:
-      t: "1"
-      s: "!"
+      t: '1'
+      s: '!'
     KC_2:
-      t: "2"
-      s: "@"
+      t: '2'
+      s: '@'
     KC_3:
-      t: "3"
-      s: "#"
+      t: '3'
+      s: '#'
     KC_4:
-      t: "4"
-      s: "$"
+      t: '4'
+      s: '$'
     KC_5:
-      t: "5"
-      s: "%"
+      t: '5'
+      s: '%'
     KC_6:
-      t: "6"
-      s: "^"
+      t: '6'
+      s: '^'
     KC_7:
-      t: "7"
-      s: "&"
+      t: '7'
+      s: '&'
     KC_8:
-      t: "8"
-      s: "*"
+      t: '8'
+      s: '*'
     KC_9:
-      t: "9"
-      s: "("
+      t: '9'
+      s: '('
     KC_0:
-      t: "0"
-      s: ")"
+      t: '0'
+      s: ')'
     KC_EQUAL:
-      t: "="
-      s: "+"
+      t: '='
+      s: '+'
     KC_MINUS:
-      t: "-"
-      s: "_"
+      t: '-'
+      s: '_'
     KC_SLSH:
-      t: "/"
-      s: "?"
+      t: '/'
+      s: '?'
     KC_FSLH:
-      t: "/"
-      s: "?"
+      t: '/'
+      s: '?'
     KC_BACKSLASH:
       t: '\'
       s: '|'
@@ -67,41 +174,45 @@ parse_config:
       t: '\'
       s: '|'
     KC_SCLN:
-      t: ";"
-      s: ":"
-    KC_SINGLE_QUOTE:
-      t: "'"
-      s: '"'
-    KC_SQT:
-      t: ''''
-      s: '"'
-    KC_APOSTROPHE:
-      t: ''''
-      s: '"'
-    KC_APOS:
+      t: ';'
+      s: ':'
+    KC_QUOTE:
       t: ''''
       s: '"'
     KC_COMM:
-      t: ","
-      s: "<"
+      t: ','
+      s: '<'
     KC_PERIOD:
-      t: "."
-      s: ">"
+      t: '.'
+      s: '>'
     KC_DOT:
-      t: "."
-      s: ">"
+      t: '.'
+      s: '>'
     KC_LEFT_BRACKET:
-      t: "["
-      s: "{"
+      t: '['
+      s: '{'
     KC_LBKT:
-      t: "["
-      s: "{"
+      t: '['
+      s: '{'
     KC_RIGHT_BRACKET:
-      t: "]"
-      s: "}"
+      t: ']'
+      s: '}'
     KC_RBKT:
-      t: "]"
-      s: "}"
+      t: ']'
+      s: '}'
     KC_GRAVE:
-      t: "`"
-      s: "~"
+      t: '`'
+      s: '~'
+    KC_TAB: $$mdi:keyboard-tab$$
+    KC_LSFT: $$mdi:apple-keyboard-shift$$
+    KC_RSFT: $$mdi:apple-keyboard-shift$$
+    KC_LCTL: $$mdi:apple-keyboard-control$$
+    KC_RCTL: $$mdi:apple-keyboard-control$$
+    KC_LGUI: $$mdi:apple-keyboard-command$$
+    KC_RGUI: $$mdi:apple-keyboard-command$$
+    KC_SPC: $$mdi:keyboard-space$$
+    KC_ENT: $$mdi:keyboard-return$$
+    KC_BSPC: $$mdi:backspace-outline$$
+    KC_LOWER: $$mdi:layers-triple$$
+    KC_RAISE: $$mdi:layers-triple-outline$$
+    RGUI(KC_LCTL): $$mdi:console$$

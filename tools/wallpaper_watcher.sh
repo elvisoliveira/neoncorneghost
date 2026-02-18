@@ -18,8 +18,8 @@ KEYMAP_DIR="./tools/keymap"
 DEFAULT_WALLPAPER="$KEYMAP_DIR/keymap_L0.png"
 
 declare -A PRESS_WALLPAPERS=(
-    [191]="$KEYMAP_DIR/keymap_L1.png"
-    [192]="$KEYMAP_DIR/keymap_L2.png"
+    [191]="$KEYMAP_DIR/keymap_L2.png"
+    [192]="$KEYMAP_DIR/keymap_L1.png"
     [193]="$KEYMAP_DIR/keymap_L3.png"
 )
 

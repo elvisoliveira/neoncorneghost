@@ -12,8 +12,8 @@
 // multi-key macros, etc.).
 enum custom_keycodes {
     KC_LOWER = SAFE_RANGE,
-    KC_OLED_TG,
     KC_RAISE,
+    TG_OLED,
     HUI,
     HUD
 };
@@ -87,7 +87,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 // - Adjust runtime variables
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
-        case KC_OLED_TG:
+        case TG_OLED:
             if (record->event.pressed) {
                 oled_is_enabled = !oled_is_enabled;
             }
