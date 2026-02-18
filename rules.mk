@@ -6,7 +6,7 @@
 OLED_ENABLE = yes
 OLED_DRIVER = ssd1306
 RGBLIGHT_ENABLE = no
-TAP_DANCE_ENABLE = no # required to use tap dance in the keymap
+TAP_DANCE_ENABLE = yes # required to use tap dance in the keymap
 EXTRAKEY_ENABLE = no # required if you want KC_MUTE / KC_VOLD / KC_VOLU
 MOUSEKEY_ENABLE = no
 WPM_ENABLE = yes # required to use get_current_wpm()

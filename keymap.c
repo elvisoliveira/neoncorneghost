@@ -2,6 +2,7 @@
 // km: neoncorneghost
 
 #include QMK_KEYBOARD_H
+#include "keymap_brazilian_abnt2.h"
 #include "oled.h"
 #include "rgb.h"
 #include "layer_names.h"
@@ -19,22 +20,27 @@ enum custom_keycodes {
 };
 
 enum td_keycodes {
-    CAPLOCK,
-    SUPER,
-    ALT
+    TD_C_CED,
+    TD_A_ACC,
+    TD_TAB_ESC
 };
+
+void a_accents(tap_dance_state_t *state, void *user_data) {
+    if (state->count == 2) {
+        tap_code(KC_QUOT);
+    } else if (state->count == 3) {
+        tap_code(KC_LBRC);
+    }
+    tap_code(KC_A);
+}
 
 // Tap Dance actions. Tap Dance lets a single physical key perform different
 // actions depending on how many times it is tapped in quick succession.
-// The mapping below defines three tap-dance behaviors used in the keymap:
-// - CAPLOCK:  single tap -> Left Shift, double tap -> Caps Lock
-// - SUPER:    single tap -> Application/Menu key, double tap -> activate LOWER layer
-// - ALT:      single tap -> Right Alt, double tap -> Left Alt
-// qk_tap_dance_action_t tap_dance_actions[] = {
-//     [CAPLOCK] = ACTION_TAP_DANCE_DOUBLE(KC_LSFT, KC_CAPS),
-//     [SUPER] = ACTION_TAP_DANCE_DOUBLE(KC_APPLICATION, KC_LOWER),
-//     [ALT] = ACTION_TAP_DANCE_DOUBLE(KC_RALT, KC_LALT)
-// };
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_C_CED] = ACTION_TAP_DANCE_DOUBLE(BR_C, BR_CCED),
+    [TD_A_ACC] = ACTION_TAP_DANCE_FN(a_accents),
+    [TD_TAB_ESC] = ACTION_TAP_DANCE_DOUBLE(KC_TAB, KC_ESC),
+};
 
 // Keymap data moved to external header for easier editing
 #include "layers.h"

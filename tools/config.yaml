@@ -122,34 +122,36 @@ draw_config:
     }
 parse_config:
   qmk_keycode_map:
-    KC_1:
+    TD(TD_C_CED): 'C'
+    TD(TD_A_ACC): 'A'
+    BR_1:
       t: '1'
       s: '!'
-    KC_2:
+    BR_2:
       t: '2'
       s: '@'
-    KC_3:
+    BR_3:
       t: '3'
       s: '#'
-    KC_4:
+    BR_4:
       t: '4'
       s: '$'
-    KC_5:
+    BR_5:
       t: '5'
       s: '%'
-    KC_6:
+    BR_6:
       t: '6'
       s: '^'
-    KC_7:
+    BR_7:
       t: '7'
       s: '&'
-    KC_8:
+    BR_8:
       t: '8'
       s: '*'
-    KC_9:
+    BR_9:
       t: '9'
       s: '('
-    KC_0:
+    BR_0:
       t: '0'
       s: ')'
     KC_EQUAL:
@@ -158,31 +160,25 @@ parse_config:
     KC_MINUS:
       t: '-'
       s: '_'
-    KC_SLSH:
+    BR_SLSH:
       t: '/'
       s: '?'
-    KC_FSLH:
-      t: '/'
-      s: '?'
-    KC_BACKSLASH:
-      t: '\'
-      s: '|'
     KC_BSLH:
       t: '\'
       s: '|'
-    KC_SCLN:
+    BR_SCLN:
       t: ';'
       s: ':'
-    KC_QUOTE:
+    BR_QUOT:
       t: ''''
       s: '"'
-    KC_COMM:
+    BR_COMM:
       t: ','
       s: '<'
     KC_PERIOD:
       t: '.'
       s: '>'
-    KC_DOT:
+    BR_DOT:
       t: '.'
       s: '>'
     KC_LEFT_BRACKET:
@@ -212,4 +208,24 @@ parse_config:
     KC_BSPC: $$mdi:backspace-outline$$
     KC_LOWER: $$mdi:layers-triple$$
     KC_RAISE: $$mdi:layers-triple-outline$$
-    RGUI(KC_LCTL): $$mdi:console$$
+    LGUI(KC_LCTL): $$mdi:console$$
+    KC_KP_7: '1'
+    KC_KP_8: '8'
+    KC_KP_9: '9'
+    KC_KP_4: '4'
+    KC_KP_5: '5'
+    KC_KP_6: '6'
+    KC_KP_1: '1'
+    KC_KP_2: '2'
+    KC_KP_3: '3'
+    KC_KP_0: '0'
+    KC_KP_DOT: $$mdi:circle-small$$
+    KC_NUM: $$mdi:dialpad$$
+    KC_PCMM: $$mdi:comma$$
+    KC_PENT: $$mdi:calculator-variant$$
+    KC_PMNS: $$mdi:minus$$
+    KC_PAST: $$mdi:asterisk$$
+    KC_PEQL: $$mdi:equal$$
+    KC_PPLS: $$mdi:plus$$
+    KC_PSLS: $$mdi:slash-forward$$
+    LGUI(KC_TAB): $$mdi:console-line$$
