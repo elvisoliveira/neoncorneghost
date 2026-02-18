@@ -67,15 +67,16 @@ You can export your current layout by generating `keymap.json`:
 qmk c2json -kb crkbd/rev1/common -km neoncorneghost ./layers.h  > keymap.json
 ```
 
-## Wallpaper Layer Watcher
+## Layer State Daemon
 
 This watcher changes your desktop wallpaper whenever the active keyboard layer changes.  
 The goal is to make layer state visible at a glance, so you always know which layout is active without guessing.
+It also watches `layers.h` and automatically runs `./tools/tidy_keymap_layers.py ./layers.h` plus `./tools/generate_keymap_assets.sh` when the file changes.
 
 Use it after generating the keymap wallpapers:
 
 ```console
-./tools/wallpaper_watcher.sh
+./tools/layer_state_daemon.sh
 ```
 
 ## Generate Wallpaper Assets
@@ -92,4 +93,4 @@ Typical workflow:
 ./tools/generate_keymap_assets.sh
 ```
 
-- Run `./tools/wallpaper_watcher.sh` to switch wallpapers automatically as layers change
+- Run `./tools/layer_state_daemon.sh` to switch wallpapers automatically as layers change
