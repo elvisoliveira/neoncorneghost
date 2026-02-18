@@ -72,6 +72,7 @@ qmk c2json -kb crkbd/rev1/common -km neoncorneghost ./layers.h  > keymap.json
 This watcher changes your desktop wallpaper whenever the active keyboard layer changes.  
 The goal is to make layer state visible at a glance, so you always know which layout is active without guessing.
 It also watches `layers.h` and automatically runs `./tools/tidy_keymap_layers.py ./layers.h` plus `./tools/generate_keymap_assets.sh` when the file changes.
+On startup, it performs one immediate asset refresh and then applies the default wallpaper.
 
 Use it after generating the keymap wallpapers:
 
@@ -79,10 +80,17 @@ Use it after generating the keymap wallpapers:
 ./tools/layer_state_daemon.sh
 ```
 
+With background merge enabled for auto-regenerated assets:
+
+```console
+BACKGROUND_WALLPAPER_IMAGE=./tools/keymap/wallpaper_base.jpg ./tools/layer_state_daemon.sh
+```
+
 ## Generate Wallpaper Assets
 
 This script generates wallpaper images from your current keymap layers (`layers.h`).
 Each generated image represents one layer and is used by the watcher script.
+You can optionally merge the keyboard layer image on top of a background wallpaper image.
 
 Typical workflow:
 - Edit `layers.h`
@@ -91,6 +99,12 @@ Typical workflow:
 
 ```console
 ./tools/generate_keymap_assets.sh
+```
+
+Optional background merge:
+
+```console
+BACKGROUND_WALLPAPER_IMAGE=./tools/keymap/wallpaper_base.jpg ./tools/generate_keymap_assets.sh
 ```
 
 - Run `./tools/layer_state_daemon.sh` to switch wallpapers automatically as layers change

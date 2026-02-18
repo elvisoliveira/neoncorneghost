@@ -50,18 +50,23 @@ file_hash() {
 }
 
 refresh_layer_assets() {
+    local force_refresh="${1:-0}"
     if [[ "$REGEN_RUNNING" -eq 1 ]]; then
         return
     fi
 
     local current_hash=""
     current_hash=$(file_hash "$LAYER_SOURCE_FILE" 2>/dev/null || echo "")
-    if [[ -n "$LAST_HANDLED_HASH" && -n "$current_hash" && "$current_hash" == "$LAST_HANDLED_HASH" ]]; then
+    if [[ "$force_refresh" -ne 1 && -n "$LAST_HANDLED_HASH" && -n "$current_hash" && "$current_hash" == "$LAST_HANDLED_HASH" ]]; then
         return
     fi
 
     REGEN_RUNNING=1
-    echo "[$(date +%H:%M:%S)] layers.h changed; tidying and regenerating assets..."
+    if [[ "$force_refresh" -eq 1 ]]; then
+        echo "[$(date +%H:%M:%S)] Startup refresh: tidying and regenerating assets..."
+    else
+        echo "[$(date +%H:%M:%S)] layers.h changed; tidying and regenerating assets..."
+    fi
     if ./tools/tidy_keymap_layers.py "$LAYER_SOURCE_FILE" && ./tools/generate_keymap_assets.sh; then
         LAST_HANDLED_HASH=$(file_hash "$LAYER_SOURCE_FILE" 2>/dev/null || echo "$current_hash")
         echo "[$(date +%H:%M:%S)] Asset regeneration complete."
@@ -98,8 +103,9 @@ echo "  Press Ctrl+C to stop."
 echo ""
 
 # Set the default wallpaper on start
-set_layer_wallpaper "$BASE_LAYER_WALLPAPER"
 LAST_HANDLED_HASH=$(file_hash "$LAYER_SOURCE_FILE" 2>/dev/null || echo "")
+refresh_layer_assets 1
+set_layer_wallpaper "$BASE_LAYER_WALLPAPER"
 
 watch_layer_source_changes &
 LAYER_SOURCE_WATCHER_PID=$!

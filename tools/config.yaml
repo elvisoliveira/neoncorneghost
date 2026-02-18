@@ -17,6 +17,7 @@ draw_config:
     /* default key styling */
     rect.key {
         fill: #f6f8fa;
+        opacity: 0.8;
     }
 
     rect.key, rect.combo {
@@ -52,11 +53,7 @@ draw_config:
 
     /* styling for layer labels */
     text.label {
-        font-weight: bold;
-        text-anchor: start;
-        stroke: white;
-        stroke-width: 4;
-        paint-order: stroke;
+        display: none;
     }
 
     /* styling for optional footer */
