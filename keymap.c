@@ -14,9 +14,7 @@
 enum custom_keycodes {
     KC_LOWER = SAFE_RANGE,
     KC_RAISE,
-    TG_OLED,
-    HUI,
-    HUD
+    TG_OLED
 };
 
 enum td_keycodes {
@@ -47,39 +45,6 @@ void keyboard_post_init_user(void) {
     rgblight_disable_noeeprom();
 }
 
-static uint16_t layer_hold_keycode(uint8_t layer) {
-    switch (layer) {
-        case _RAISE:
-            return KC_F13;
-        case _LOWER:
-            return KC_F14;
-        case _TUNE:
-            return KC_F15;
-        default:
-            return KC_NO;
-    }
-}
-
-layer_state_t layer_state_set_user(layer_state_t state) {
-    static uint8_t previous_layer = 0xFF;
-    uint8_t layer = get_highest_layer(state);
-
-    uint16_t previous_keycode = layer_hold_keycode(previous_layer);
-    uint16_t current_keycode  = layer_hold_keycode(layer);
-
-    if (previous_layer != layer) {
-        if (previous_keycode != KC_NO) {
-            unregister_code(previous_keycode);
-        }
-        if (current_keycode != KC_NO) {
-            register_code(current_keycode);
-        }
-    }
-
-    previous_layer = layer;
-    return state;
-}
-
 // process_record_user handles custom keycodes defined earlier (KC_LOWER,
 // KC_RAISE, HUI, HUD) and is called on
 // every key event. Return false from a case to indicate that we've handled
@@ -102,27 +67,17 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 rgb_is_allowed = true;
             }
             return true;
-        // HUI: increase RGB hue (no EEPROM write)
-        case HUI:
-            if (record->event.pressed) {
-                rgblight_increase_hue_noeeprom();
-            }
-            return false;
-        // HUD: decrease RGB hue (no EEPROM write)
-        case HUD:
-            if (record->event.pressed) {
-                rgblight_decrease_hue_noeeprom();
-            }
-            return false;
         // KC_LOWER: momentary LOWER layer with tri-layer update
         case KC_LOWER:
             if (record->event.pressed) {
                 layer_on(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _TUNE);
+                register_code(KC_F14);
             }
             else {
                 layer_off(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _TUNE);
+                unregister_code(KC_F14);
             }
             return false;
         // KC_RAISE: momentary RAISE layer with tri-layer update
@@ -130,10 +85,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 layer_on(_RAISE);
                 update_tri_layer(_LOWER, _RAISE, _TUNE);
+                register_code(KC_F13);
             }
             else {
                 layer_off(_RAISE);
                 update_tri_layer(_LOWER, _RAISE, _TUNE);
+                unregister_code(KC_F13);
             }
             return false;
     }

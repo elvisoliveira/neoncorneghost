@@ -9,11 +9,9 @@
 #  Stop:  Ctrl+C
 # ============================================================
 
-# ---[ CONFIGURATION ]----------------------------------------
-
 XINPUT_DEVICE_ID="${1:-}"
 
-if [[ -z "$XINPUT_DEVICE_ID" ]] || ! [[ "$XINPUT_DEVICE_ID" =~ ^[0-9]+$ ]]; then
+if ! [[ "$XINPUT_DEVICE_ID" =~ ^[0-9]+$ ]]; then
     echo "Usage: $0 XINPUT_DEVICE_ID" >&2
     echo "Example: $0 9" >&2
     exit 1
@@ -23,119 +21,119 @@ LAYER_ASSETS_DIR="./tools/keymap"
 WATCH_FILES=("./keymap.h" "./tools/config.yaml")
 
 BASE_LAYER_WALLPAPER="$LAYER_ASSETS_DIR/keymap_L0.png"
-REGEN_RUNNING=0
-LAST_HANDLED_STATE=""
-
-declare -A LAYER_KEYCODE_WALLPAPERS=(
-    [191]="$LAYER_ASSETS_DIR/keymap_L2.png"
-    [192]="$LAYER_ASSETS_DIR/keymap_L1.png"
-    [193]="$LAYER_ASSETS_DIR/keymap_L3.png"
-)
-
-# ---[ END CONFIGURATION ]------------------------------------
-
+PRESSED_LAYER_KEYS=()
 
 set_layer_wallpaper() {
     local image="$1"
-    if [[ ! -f "$image" ]]; then
+    [[ -f "$image" ]] || {
         echo "[warn] Image not found, skipping: $image" >&2
         return
-    fi
+    }
     xwallpaper --output eDP1 --center "$image"
     echo "[$(date +%H:%M:%S)] Wallpaper set to: $(basename "$image")"
-}
-
-file_hash() {
-    local path="$1"
-    [[ -f "$path" ]] || return 1
-    if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$path" | awk '{print $1}'
-    else
-        shasum -a 256 "$path" | awk '{print $1}'
-    fi
 }
 
 build_watch_state() {
     local state=""
     local path=""
-    local hash=""
+    local mtime=""
     for path in "${WATCH_FILES[@]}"; do
-        hash=$(file_hash "$path" 2>/dev/null || echo "missing")
-        state+="${hash}:"
+        if [[ -f "$path" ]]; then
+            mtime=$(stat -c %Y "$path" 2>/dev/null || echo "missing")
+        else
+            mtime="missing"
+        fi
+        state+="${mtime}:"
     done
     printf '%s' "$state"
 }
 
 refresh_layer_assets() {
-    local force_refresh="${1:-0}"
-    if [[ "$REGEN_RUNNING" -eq 1 ]]; then
-        return
-    fi
-
-    local current_state=""
-    current_state=$(build_watch_state)
-    if [[ "$force_refresh" -ne 1 && -n "$LAST_HANDLED_STATE" && "$current_state" == "$LAST_HANDLED_STATE" ]]; then
-        return
-    fi
-
-    REGEN_RUNNING=1
-    if [[ "$force_refresh" -eq 1 ]]; then
-        echo "[$(date +%H:%M:%S)] Startup refresh: tidying and regenerating assets..."
-    else
-        echo "[$(date +%H:%M:%S)] Watched file changed; tidying and regenerating assets..."
-    fi
+    local reason="${1:-Watched file changed}"
+    echo "[$(date +%H:%M:%S)] ${reason}; tidying and regenerating assets..."
     if ./tools/tidy_keymap_layers.py "${WATCH_FILES[0]}" && ./tools/generate_keymap_assets.sh; then
-        LAST_HANDLED_STATE="${current_state}"
         echo "[$(date +%H:%M:%S)] Asset regeneration complete."
     else
         echo "[$(date +%H:%M:%S)] [error] Asset regeneration failed." >&2
     fi
-    REGEN_RUNNING=0
 }
 
 watch_layer_source_changes() {
-    local -A last_mtime=()
-    local path=""
-    for path in "${WATCH_FILES[@]}"; do
-        if [[ -f "$path" ]]; then
-            last_mtime["$path"]=$(stat -c %Y "$path" 2>/dev/null || echo "")
-        else
-            last_mtime["$path"]=""
-        fi
+    local last_state=""
+    local current_state=""
+    last_state=$(build_watch_state)
+    while sleep 1; do
+        current_state=$(build_watch_state)
+        [[ "$current_state" == "$last_state" ]] && continue
+        last_state="$current_state"
+        refresh_layer_assets
     done
+}
 
-    while true; do
-        sleep 1
-        local changed=0
-        local current_mtime=""
-        for path in "${WATCH_FILES[@]}"; do
-            if [[ -f "$path" ]]; then
-                current_mtime=$(stat -c %Y "$path" 2>/dev/null || echo "")
-            else
-                current_mtime=""
-            fi
-            if [[ "${last_mtime[$path]}" != "$current_mtime" ]]; then
-                last_mtime["$path"]="$current_mtime"
-                changed=1
-            fi
-        done
-        if [[ "$changed" -eq 1 ]]; then
-            refresh_layer_assets
-        fi
+array_contains() {
+    local needle="$1"
+    local value
+    shift
+    for value in "$@"; do
+        [[ "$value" == "$needle" ]] && return 0
     done
+    return 1
+}
+
+add_pressed_layer_key() {
+    local key="$1"
+    array_contains "$key" "${PRESSED_LAYER_KEYS[@]}" || PRESSED_LAYER_KEYS+=("$key")
+}
+
+remove_pressed_layer_key() {
+    local key="$1"
+    local value
+    local remaining=()
+    for value in "${PRESSED_LAYER_KEYS[@]}"; do
+        [[ "$value" == "$key" ]] || remaining+=("$value")
+    done
+    PRESSED_LAYER_KEYS=("${remaining[@]}")
+}
+
+resolve_layer_wallpaper() {
+    local has_191=0
+    local has_192=0
+    array_contains 191 "${PRESSED_LAYER_KEYS[@]}" && has_191=1
+    array_contains 192 "${PRESSED_LAYER_KEYS[@]}" && has_192=1
+    case "${has_191}${has_192}" in
+        11) printf '%s' "$LAYER_ASSETS_DIR/keymap_L3.png" ;;
+        10) printf '%s' "$LAYER_ASSETS_DIR/keymap_L2.png" ;;
+        01) printf '%s' "$LAYER_ASSETS_DIR/keymap_L1.png" ;;
+        *) printf '%s' "$BASE_LAYER_WALLPAPER" ;;
+    esac
+}
+
+handle_key_event() {
+    local event="$1"
+    local keycode="$2"
+
+    case "$keycode" in
+        191|192) ;;
+        *) return ;;
+    esac
+
+    case "$event" in
+        press) add_pressed_layer_key "$keycode" ;;
+        release) remove_pressed_layer_key "$keycode" ;;
+        *) return ;;
+    esac
+
+    set_layer_wallpaper "$(resolve_layer_wallpaper)"
 }
 
 echo "=== Layer State Daemon Started ==="
 echo "  Device ID : $XINPUT_DEVICE_ID"
 echo "  Default   : $BASE_LAYER_WALLPAPER"
 echo "  Watch     : ${WATCH_FILES[*]}"
-echo "  Watching keycodes: ${!LAYER_KEYCODE_WALLPAPERS[*]}"
 echo "  Press Ctrl+C to stop."
 echo ""
 
-# Set the default wallpaper on start
-LAST_HANDLED_STATE="$(build_watch_state)"
-refresh_layer_assets 1
+refresh_layer_assets "Startup refresh"
 set_layer_wallpaper "$BASE_LAYER_WALLPAPER"
 
 watch_layer_source_changes &
@@ -148,21 +146,6 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-handle_key_event() {
-    local event="$1"
-    local keycode="$2"
-
-    if [[ -z "${LAYER_KEYCODE_WALLPAPERS[$keycode]+_}" ]]; then
-        return
-    fi
-
-    if [[ "$event" == "press" ]]; then
-        set_layer_wallpaper "${LAYER_KEYCODE_WALLPAPERS[$keycode]}"
-    elif [[ "$event" == "release" ]]; then
-        set_layer_wallpaper "$BASE_LAYER_WALLPAPER"
-    fi
-}
-
 # Use XI2 raw events to avoid X autorepeat press/release spam.
 # Example block:
 #   EVENT type 14 (RawKeyPress)
@@ -173,23 +156,22 @@ current_device=""
 current_keycode=""
 
 xinput test-xi2 --root "$XINPUT_DEVICE_ID" | while read -r line; do
-    if [[ "$line" == *"(RawKeyPress)"* ]]; then
-        current_event="press"
-        current_device=""
-        current_keycode=""
-        continue
-    fi
+    case "$line" in
+        *"(RawKeyPress)"*)
+            current_event="press"
+            current_device=""
+            current_keycode=""
+            continue
+            ;;
+        *"(RawKeyRelease)"*)
+            current_event="release"
+            current_device=""
+            current_keycode=""
+            continue
+            ;;
+    esac
 
-    if [[ "$line" == *"(RawKeyRelease)"* ]]; then
-        current_event="release"
-        current_device=""
-        current_keycode=""
-        continue
-    fi
-
-    if [[ -z "$current_event" ]]; then
-        continue
-    fi
+    [[ -n "$current_event" ]] || continue
 
     if [[ "$line" =~ ^[[:space:]]*device:\ ([0-9]+) ]]; then
         current_device="${BASH_REMATCH[1]}"
@@ -198,9 +180,7 @@ xinput test-xi2 --root "$XINPUT_DEVICE_ID" | while read -r line; do
     fi
 
     if [[ -n "$current_device" && -n "$current_keycode" ]]; then
-        if [[ "$current_device" == "$XINPUT_DEVICE_ID" ]]; then
-            handle_key_event "$current_event" "$current_keycode"
-        fi
+        [[ "$current_device" == "$XINPUT_DEVICE_ID" ]] && handle_key_event "$current_event" "$current_keycode"
         current_event=""
         current_device=""
         current_keycode=""
