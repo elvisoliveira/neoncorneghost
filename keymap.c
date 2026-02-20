@@ -19,23 +19,35 @@ enum custom_keycodes {
 
 enum td_keycodes {
     TD_C_CED,
-    TD_A_ACC
+    TD_A_ACC,
+    TD_E_ACC,
+    TD_I_ACC,
+    TD_O_ACC,
+    TD_U_ACC,
 };
 
-void a_accents(tap_dance_state_t *state, void *user_data) {
-    if (state->count == 2) {
-        tap_code(KC_QUOT);
-    } else if (state->count == 3) {
-        tap_code(KC_LBRC);
+#define ACCENT_FN(LETTER) \
+    void LETTER##_accents(tap_dance_state_t *state, void *user_data) { \
+        if (state->count == 2) tap_code(KC_LBRC); \
+        else if (state->count == 3) tap_code(KC_QUOT); \
+        tap_code(KC_##LETTER); \
     }
-    tap_code(KC_A);
-}
+
+ACCENT_FN(A)
+ACCENT_FN(E)
+ACCENT_FN(I)
+ACCENT_FN(O)
+ACCENT_FN(U)
 
 // Tap Dance actions. Tap Dance lets a single physical key perform different
 // actions depending on how many times it is tapped in quick succession.
 tap_dance_action_t tap_dance_actions[] = {
     [TD_C_CED] = ACTION_TAP_DANCE_DOUBLE(BR_C, BR_CCED),
-    [TD_A_ACC] = ACTION_TAP_DANCE_FN(a_accents)
+    [TD_A_ACC] = ACTION_TAP_DANCE_FN(A_accents),
+    [TD_E_ACC] = ACTION_TAP_DANCE_FN(E_accents),
+    [TD_I_ACC] = ACTION_TAP_DANCE_FN(I_accents),
+    [TD_O_ACC] = ACTION_TAP_DANCE_FN(O_accents),
+    [TD_U_ACC] = ACTION_TAP_DANCE_FN(U_accents),
 };
 
 // Keymap data moved to external header for easier editing

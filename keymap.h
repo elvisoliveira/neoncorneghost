@@ -9,8 +9,12 @@
 
 // Named aliases for right-alt (AltGr) combos used in the keymap.
 // Using macros makes it easier to change the combos in one place.
-#define A_ACC      TD(TD_A_ACC) // A (Accents Tap Dance)
 #define C_CED      TD(TD_C_CED) // C (Cedilla Tap Dance)
+#define A_ACC      TD(TD_A_ACC) // A (Accents Tap Dance)
+#define E_ACC      TD(TD_E_ACC) // A (Accents Tap Dance)
+#define I_ACC      TD(TD_I_ACC) // A (Accents Tap Dance)
+#define O_ACC      TD(TD_O_ACC) // A (Accents Tap Dance)
+#define U_ACC      TD(TD_U_ACC) // A (Accents Tap Dance)
 
 #define CONSOLE    LGUI(KC_TAB)
 #define GUI_CTL    LGUI(KC_LCTL)
@@ -20,7 +24,7 @@
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-           KC_ESC,      BR_Q,      BR_W,      BR_E,      BR_R,      BR_T,                               BR_Y,      BR_U,      BR_I,      BR_O,      BR_P,   KC_BSPC,
+           KC_ESC,      BR_Q,      BR_W,     E_ACC,      BR_R,      BR_T,                               BR_Y,     U_ACC,     I_ACC,     O_ACC,      BR_P,   KC_BSPC,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
          TAB_LSFT,     A_ACC,      BR_S,      BR_D,      BR_F,      BR_G,                               BR_H,      BR_J,      BR_K,      BR_L,   BR_SCLN,   BR_QUOT,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
