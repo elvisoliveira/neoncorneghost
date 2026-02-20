@@ -154,16 +154,16 @@ parse_config:
     BR_0:
       t: '0'
       s: ')'
-    KC_EQUAL:
+    BR_EQL:
       t: '='
       s: '+'
-    KC_MINUS:
+    BR_MINS:
       t: '-'
       s: '_'
     BR_SLSH:
       t: '/'
       s: '?'
-    KC_BSLH:
+    BR_BSLS:
       t: '\'
       s: '|'
     BR_SCLN:
@@ -181,16 +181,10 @@ parse_config:
     BR_DOT:
       t: '.'
       s: '>'
-    KC_LEFT_BRACKET:
+    BR_LBRC:
       t: '['
       s: '{'
-    KC_LBKT:
-      t: '['
-      s: '{'
-    KC_RIGHT_BRACKET:
-      t: ']'
-      s: '}'
-    KC_RBKT:
+    BR_RBRC:
       t: ']'
       s: '}'
     KC_GRAVE:
@@ -198,6 +192,8 @@ parse_config:
       s: '~'
     KC_TAB: $$mdi:keyboard-tab$$
     KC_LSFT: $$mdi:apple-keyboard-shift$$
+    MOD_LSFT: $$mdi:apple-keyboard-shift$$
+    MOD_RSFT: $$mdi:apple-keyboard-shift$$
     KC_RSFT: $$mdi:apple-keyboard-shift$$
     KC_LCTL: $$mdi:apple-keyboard-control$$
     KC_RCTL: $$mdi:apple-keyboard-control$$
@@ -206,18 +202,19 @@ parse_config:
     KC_SPC: $$mdi:keyboard-space$$
     KC_ENT: $$mdi:keyboard-return$$
     KC_BSPC: $$mdi:backspace-outline$$
+    MT(MOD_LALT, KC_BSPC): $$mdi:backspace-outline$$
     KC_LOWER: $$mdi:layers-triple$$
     KC_RAISE: $$mdi:layers-triple-outline$$
     LGUI(KC_LCTL): $$mdi:console$$
-    KC_KP_7: '1'
-    KC_KP_8: '8'
     KC_KP_9: '9'
-    KC_KP_4: '4'
-    KC_KP_5: '5'
+    KC_KP_8: '8'
+    KC_KP_7: '7'
     KC_KP_6: '6'
-    KC_KP_1: '1'
-    KC_KP_2: '2'
+    KC_KP_5: '5'
+    KC_KP_4: '4'
     KC_KP_3: '3'
+    KC_KP_2: '2'
+    KC_KP_1: '1'
     KC_KP_0: '0'
     KC_KP_DOT: $$mdi:circle-small$$
     KC_NUM: $$mdi:dialpad$$
@@ -229,3 +226,4 @@ parse_config:
     KC_PPLS: $$mdi:plus$$
     KC_PSLS: $$mdi:slash-forward$$
     LGUI(KC_TAB): $$mdi:console-line$$
+    KC_ESC: $$mdi:keyboard-esc$$

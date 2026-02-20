@@ -3,22 +3,28 @@
 #  layer_state_daemon.sh
 #  Listens for physical key press/release events via xinput XI2,
 #  updates layer wallpapers, and regenerates keymap assets when
-#  layers.h changes.
+#  watched files change.
 #
-#  Usage: bash layer_state_daemon.sh
+#  Usage: bash layer_state_daemon.sh XINPUT_DEVICE_ID
 #  Stop:  Ctrl+C
 # ============================================================
 
 # ---[ CONFIGURATION ]----------------------------------------
 
-XINPUT_DEVICE_ID=14
+XINPUT_DEVICE_ID="${1:-}"
+
+if [[ -z "$XINPUT_DEVICE_ID" ]] || ! [[ "$XINPUT_DEVICE_ID" =~ ^[0-9]+$ ]]; then
+    echo "Usage: $0 XINPUT_DEVICE_ID" >&2
+    echo "Example: $0 9" >&2
+    exit 1
+fi
 
 LAYER_ASSETS_DIR="./tools/keymap"
-LAYER_SOURCE_FILE="./layers.h"
+WATCH_FILES=("./keymap.h" "./tools/config.yaml")
 
 BASE_LAYER_WALLPAPER="$LAYER_ASSETS_DIR/keymap_L0.png"
 REGEN_RUNNING=0
-LAST_HANDLED_HASH=""
+LAST_HANDLED_STATE=""
 
 declare -A LAYER_KEYCODE_WALLPAPERS=(
     [191]="$LAYER_ASSETS_DIR/keymap_L2.png"
@@ -49,15 +55,26 @@ file_hash() {
     fi
 }
 
+build_watch_state() {
+    local state=""
+    local path=""
+    local hash=""
+    for path in "${WATCH_FILES[@]}"; do
+        hash=$(file_hash "$path" 2>/dev/null || echo "missing")
+        state+="${hash}:"
+    done
+    printf '%s' "$state"
+}
+
 refresh_layer_assets() {
     local force_refresh="${1:-0}"
     if [[ "$REGEN_RUNNING" -eq 1 ]]; then
         return
     fi
 
-    local current_hash=""
-    current_hash=$(file_hash "$LAYER_SOURCE_FILE" 2>/dev/null || echo "")
-    if [[ "$force_refresh" -ne 1 && -n "$LAST_HANDLED_HASH" && -n "$current_hash" && "$current_hash" == "$LAST_HANDLED_HASH" ]]; then
+    local current_state=""
+    current_state=$(build_watch_state)
+    if [[ "$force_refresh" -ne 1 && -n "$LAST_HANDLED_STATE" && "$current_state" == "$LAST_HANDLED_STATE" ]]; then
         return
     fi
 
@@ -65,10 +82,10 @@ refresh_layer_assets() {
     if [[ "$force_refresh" -eq 1 ]]; then
         echo "[$(date +%H:%M:%S)] Startup refresh: tidying and regenerating assets..."
     else
-        echo "[$(date +%H:%M:%S)] layers.h changed; tidying and regenerating assets..."
+        echo "[$(date +%H:%M:%S)] Watched file changed; tidying and regenerating assets..."
     fi
-    if ./tools/tidy_keymap_layers.py "$LAYER_SOURCE_FILE" && ./tools/generate_keymap_assets.sh; then
-        LAST_HANDLED_HASH=$(file_hash "$LAYER_SOURCE_FILE" 2>/dev/null || echo "$current_hash")
+    if ./tools/tidy_keymap_layers.py "${WATCH_FILES[0]}" && ./tools/generate_keymap_assets.sh; then
+        LAST_HANDLED_STATE="${current_state}"
         echo "[$(date +%H:%M:%S)] Asset regeneration complete."
     else
         echo "[$(date +%H:%M:%S)] [error] Asset regeneration failed." >&2
@@ -77,18 +94,32 @@ refresh_layer_assets() {
 }
 
 watch_layer_source_changes() {
-    local last_mtime=""
-    if [[ -f "$LAYER_SOURCE_FILE" ]]; then
-        last_mtime=$(stat -c %Y "$LAYER_SOURCE_FILE" 2>/dev/null || echo "")
-    fi
+    local -A last_mtime=()
+    local path=""
+    for path in "${WATCH_FILES[@]}"; do
+        if [[ -f "$path" ]]; then
+            last_mtime["$path"]=$(stat -c %Y "$path" 2>/dev/null || echo "")
+        else
+            last_mtime["$path"]=""
+        fi
+    done
 
     while true; do
         sleep 1
-        [[ -f "$LAYER_SOURCE_FILE" ]] || continue
-        local current_mtime
-        current_mtime=$(stat -c %Y "$LAYER_SOURCE_FILE" 2>/dev/null || echo "")
-        if [[ -n "$current_mtime" && "$current_mtime" != "$last_mtime" ]]; then
-            last_mtime="$current_mtime"
+        local changed=0
+        local current_mtime=""
+        for path in "${WATCH_FILES[@]}"; do
+            if [[ -f "$path" ]]; then
+                current_mtime=$(stat -c %Y "$path" 2>/dev/null || echo "")
+            else
+                current_mtime=""
+            fi
+            if [[ "${last_mtime[$path]}" != "$current_mtime" ]]; then
+                last_mtime["$path"]="$current_mtime"
+                changed=1
+            fi
+        done
+        if [[ "$changed" -eq 1 ]]; then
             refresh_layer_assets
         fi
     done
@@ -97,13 +128,13 @@ watch_layer_source_changes() {
 echo "=== Layer State Daemon Started ==="
 echo "  Device ID : $XINPUT_DEVICE_ID"
 echo "  Default   : $BASE_LAYER_WALLPAPER"
-echo "  Layers    : $LAYER_SOURCE_FILE"
+echo "  Watch     : ${WATCH_FILES[*]}"
 echo "  Watching keycodes: ${!LAYER_KEYCODE_WALLPAPERS[*]}"
 echo "  Press Ctrl+C to stop."
 echo ""
 
 # Set the default wallpaper on start
-LAST_HANDLED_HASH=$(file_hash "$LAYER_SOURCE_FILE" 2>/dev/null || echo "")
+LAST_HANDLED_STATE="$(build_watch_state)"
 refresh_layer_assets 1
 set_layer_wallpaper "$BASE_LAYER_WALLPAPER"
 

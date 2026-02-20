@@ -9,35 +9,36 @@
 
 // Named aliases for right-alt (AltGr) combos used in the keymap.
 // Using macros makes it easier to change the combos in one place.
-#define A_ACC      TD(TD_A_ACC)
-#define C_CED      TD(TD_C_CED)
-#define TAB_ESC    TD(TD_TAB_ESC)
+#define A_ACC      TD(TD_A_ACC) // A (Accents Tap Dance)
+#define C_CED      TD(TD_C_CED) // C (Cedilla Tap Dance)
 
-#define TERM       LGUI(KC_TAB)
-#define GUICTL     LGUI(KC_LCTL)
+#define CONSOLE    LGUI(KC_TAB)
+#define GUI_CTL    LGUI(KC_LCTL)
+
+#define TAB_LSFT   MT(MOD_LSFT, KC_TAB)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          TAB_ESC,      BR_Q,      BR_W,      BR_E,      BR_R,      BR_T,                               BR_Y,      BR_U,      BR_I,      BR_O,      BR_P,   KC_BSPC,
+           KC_ESC,      BR_Q,      BR_W,      BR_E,      BR_R,      BR_T,                               BR_Y,      BR_U,      BR_I,      BR_O,      BR_P,   KC_BSPC,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          KC_LSFT,     A_ACC,      BR_S,      BR_D,      BR_F,      BR_G,                               BR_H,      BR_J,      BR_K,      BR_L,   BR_SCLN,   BR_QUOT,
+         TAB_LSFT,     A_ACC,      BR_S,      BR_D,      BR_F,      BR_G,                               BR_H,      BR_J,      BR_K,      BR_L,   BR_SCLN,   BR_QUOT,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
           KC_LCTL,      BR_Z,      BR_X,     C_CED,      BR_V,      BR_B,                               BR_N,      BR_M,   BR_COMM,    BR_DOT,   BR_SLSH,    KC_ESC,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
-                                                      KC_LGUI,  KC_LOWER,    KC_SPC,       KC_ENT,  KC_RAISE,     KC_NO
+                                                      KC_LGUI,  KC_LOWER,    KC_SPC,       KC_ENT,  KC_RAISE,   KC_RSFT
     //                                            |----------+----------+----------|  |----------+----------+----------|
     ),
 
     [_LOWER] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-             TERM,     KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,                               BR_0,      BR_1,      BR_2,      BR_3,      BR_4,   KC_BSPC,
+          CONSOLE,      BR_1,      BR_2,      BR_3,      BR_4,      BR_5,                               BR_6,      BR_7,      BR_8,      BR_9,      BR_0,   KC_BSPC,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          KC_LSFT,     KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,                            KC_LEFT,   KC_DOWN,     KC_UP,  KC_RIGHT,   BR_QUOT,   KC_PGUP,
+          KC_LSFT,     KC_NO,     KC_NO,     KC_NO,     KC_NO,  KC_RAISE,                            KC_LEFT,   KC_DOWN,     KC_UP,  KC_RIGHT,    KC_INS,   KC_PGUP,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-          KC_LGUI,     KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,                               BR_5,      BR_6,      BR_7,      BR_8,      BR_9,   KC_PGDN,
+          KC_LCTL,     KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,                            BR_LBRC,   BR_RBRC,   BR_MINS,    BR_EQL,   BR_BSLS,   KC_PGDN,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
-                                                     KC_RAISE,   _______,     KC_NO,      KC_LSFT,   _______,     KC_NO
+                                                      KC_LGUI,   _______,     KC_NO,      KC_LSFT,   _______,   KC_RGUI
     //                                            |----------+----------+----------|  |----------+----------+----------|
     ),
 
@@ -49,15 +50,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
             KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,                              KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|
-                                                        KC_NO,   _______,    GUICTL,        KC_NO,   _______,     KC_NO
+                                                        KC_NO,   _______,   GUI_CTL,        KC_NO,   _______,     KC_NO
     //                                            |----------+----------+----------|  |----------+----------+----------|
     ),
 
     [_TUNE] = LAYOUT_split_3x6_3(
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-         RGB_M_SW,   RGB_M_R,   RGB_M_G,   RGB_M_P,   UG_TOGG,   TG_OLED,                            KC_KP_7,   KC_KP_8,   KC_KP_9,   KC_PPLS,   KC_PSLS,   KC_BSPC,
+         RGB_M_SW,   RGB_M_R,   RGB_M_G,   RGB_M_P,   UG_TOGG,   TG_OLED,                            KC_KP_7,   KC_KP_8,   KC_KP_9,   KC_PPLS,   KC_PAST,   KC_BSPC,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
-            KC_NO,     KC_NO,     KC_NO,     KC_NO,       HUI,       HUD,                            KC_KP_4,   KC_KP_5,   KC_KP_6,   KC_PMNS,   KC_PAST,   KC_PEQL,
+            KC_NO,     KC_NO,     KC_NO,     KC_NO,       HUI,       HUD,                            KC_KP_4,   KC_KP_5,   KC_KP_6,   KC_PMNS,   KC_PSLS,   KC_PEQL,
     //|----------+----------+----------+----------+----------+----------|                        |----------+----------+----------+----------+----------+----------|
             KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,     KC_NO,                            KC_KP_1,   KC_KP_2,   KC_KP_3, KC_KP_DOT,   KC_PCMM,    KC_NUM,
     //|----------+----------+----------+----------+----------+----------+----------`  `----------+----------+----------+----------+----------+----------+----------|

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Inputs
-LAYER_FILE="./layers.h"
+LAYER_FILE="./keymap.h"
 # Optional background image used as the wallpaper base.
 # Override via env var, e.g.:
 # BACKGROUND_WALLPAPER_IMAGE=./tools/keymap/wallpaper_base.jpg ./tools/generate_keymap_assets.sh
@@ -24,7 +24,7 @@ TMP_C2JSON=$(mktemp)
 TMP_PARSE=$(mktemp)
 trap 'rm -f "${TMP_C2JSON}" "${TMP_PARSE}"' EXIT
 
-# Step 1: qmk c2json ../layers.h -> TMP_C2JSON
+# Step 1: qmk c2json ../keymap.h -> TMP_C2JSON
 qmk c2json "${LAYER_FILE}" > "${TMP_C2JSON}"
 
 # Step 2: keymap parse ... reads from TMP_C2JSON and writes to TMP_PARSE

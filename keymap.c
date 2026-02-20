@@ -21,8 +21,7 @@ enum custom_keycodes {
 
 enum td_keycodes {
     TD_C_CED,
-    TD_A_ACC,
-    TD_TAB_ESC
+    TD_A_ACC
 };
 
 void a_accents(tap_dance_state_t *state, void *user_data) {
@@ -38,12 +37,11 @@ void a_accents(tap_dance_state_t *state, void *user_data) {
 // actions depending on how many times it is tapped in quick succession.
 tap_dance_action_t tap_dance_actions[] = {
     [TD_C_CED] = ACTION_TAP_DANCE_DOUBLE(BR_C, BR_CCED),
-    [TD_A_ACC] = ACTION_TAP_DANCE_FN(a_accents),
-    [TD_TAB_ESC] = ACTION_TAP_DANCE_DOUBLE(KC_TAB, KC_ESC),
+    [TD_A_ACC] = ACTION_TAP_DANCE_FN(a_accents)
 };
 
 // Keymap data moved to external header for easier editing
-#include "layers.h"
+#include "keymap.h"
 
 void keyboard_post_init_user(void) {
     rgblight_disable_noeeprom();
