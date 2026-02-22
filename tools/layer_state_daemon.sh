@@ -51,7 +51,7 @@ build_watch_state() {
 refresh_layer_assets() {
     local reason="${1:-Watched file changed}"
     echo "[$(date +%H:%M:%S)] ${reason}; tidying and regenerating assets..."
-    if ./tools/tidy_keymap_layers.py "${WATCH_FILES[0]}" && ./tools/generate_keymap_assets.sh; then
+    if ./tools/generate_keymap_assets.sh; then
         echo "[$(date +%H:%M:%S)] Asset regeneration complete."
     else
         echo "[$(date +%H:%M:%S)] [error] Asset regeneration failed." >&2
